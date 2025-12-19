@@ -10,10 +10,18 @@
   },
   "dependencies": {
     "@ai-sdk/openai": "^2.0.88",
+    "@ai-sdk/react": "^2.0.117",
     "ai": "^5.0.115",
+    "clsx": "^2.1.1",
+    "framer-motion": "^12.23.26",
+    "lucide-react": "^0.562.0",
     "next": "16.1.0",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "react-markdown": "^10.1.0",
+    "react-resizable-panels": "^4.0.10",
+    "tailwind-merge": "^3.4.0",
+    "zustand": "^5.0.9"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

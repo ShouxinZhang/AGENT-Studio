@@ -1,65 +1,87 @@
 @import "tailwindcss";
 
-:root {
-  color-scheme: dark;
-  --studio-bg: #0b0d10;
-  --studio-panel: #12151c;
-  --studio-panel-2: #161b24;
-  --studio-border: #232a36;
-  --studio-text: #e6e9f0;
-  --studio-muted: #97a1b3;
-  --studio-accent: #3cd1a7;
-  --studio-accent-2: #f4b751;
-  --studio-danger: #f07066;
-  --studio-glow: rgba(60, 209, 167, 0.18);
+@theme {
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
 }
 
-@theme inline {
-  --font-sans: var(--font-space-grotesk);
-  --font-mono: var(--font-plex-mono);
-  --color-studio-bg: var(--studio-bg);
-  --color-studio-panel: var(--studio-panel);
-  --color-studio-panel-2: var(--studio-panel-2);
-  --color-studio-border: var(--studio-border);
-  --color-studio-text: var(--studio-text);
-  --color-studio-muted: var(--studio-muted);
-  --color-studio-accent: var(--studio-accent);
-  --color-studio-accent-2: var(--studio-accent-2);
-  --color-studio-danger: var(--studio-danger);
+:root {
+  /* Default to Dark Mode (Google AI Studio Vibe) */
+  --background: #131314;
+  /* Deep matte black/grey */
+  --foreground: #e3e3e3;
+  /* High contrast text */
+  --card: #1e1f20;
+  /* Slightly lighter for panels */
+  --card-foreground: #e3e3e3;
+  --popover: #1e1f20;
+  --popover-foreground: #e3e3e3;
+  --primary: #a8c7fa;
+  /* Google blue-ish tint */
+  --primary-foreground: #000000;
+  --secondary: #353736;
+  /* Input backgrounds, button secondary */
+  --secondary-foreground: #e3e3e3;
+  --muted: #2d2e2f;
+  --muted-foreground: #c4c7c5;
+  --accent: #2d2e2f;
+  --accent-foreground: #e3e3e3;
+  --destructive: #ffb4a9;
+  --destructive-foreground: #690005;
+  --border: #444746;
+  /* Subtle border */
+  --input: #353736;
+  --ring: #a8c7fa;
+  --radius: 0.5rem;
 }
 
 body {
-  background-color: var(--studio-bg);
-  background-image:
-    radial-gradient(1200px circle at 15% 10%, rgba(60, 209, 167, 0.08), transparent 55%),
-    radial-gradient(900px circle at 85% 0%, rgba(244, 183, 81, 0.12), transparent 50%),
-    linear-gradient(135deg, rgba(21, 26, 35, 0.85), rgba(11, 13, 16, 0.9));
-  color: var(--studio-text);
-  font-family: var(--font-space-grotesk), system-ui, sans-serif;
-  min-height: 100vh;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+  overflow: hidden;
+  /* App-like feel */
 }
 
-* {
-  scrollbar-color: rgba(97, 111, 133, 0.6) transparent;
-  scrollbar-width: thin;
-}
-
-*::-webkit-scrollbar {
+/* Custom scrollbar for Webkit */
+::-webkit-scrollbar {
   width: 8px;
+  height: 8px;
 }
 
-*::-webkit-scrollbar-thumb {
-  background-color: rgba(97, 111, 133, 0.6);
-  border-radius: 999px;
+::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-@keyframes float-in {
-  0% {
-    opacity: 0;
-    transform: translateY(14px) scale(0.98);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+::-webkit-scrollbar-thumb {
+  background: #444746;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #5e5e5e;
 }

@@ -1,21 +1,20 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, Space_Grotesk } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
-const spaceGrotesk = Space_Grotesk({
+const geistSans = Geist({
+  variable: "--font-geist-sans",
   subsets: ["latin"],
-  variable: "--font-space-grotesk",
 });
 
-const plexMono = IBM_Plex_Mono({
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
   subsets: ["latin"],
-  weight: ["400", "500"],
-  variable: "--font-plex-mono",
 });
 
 export const metadata: Metadata = {
   title: "Agent Studio",
-  description: "Agent Studio built with Next.js, Tailwind, AI SDK, and OpenRouter.",
+  description: "Advanced AI Agent Playground",
 };
 
 export default function RootLayout({
@@ -24,9 +23,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="zh-CN">
+    <html lang="en" className="dark">
       <body
-        className={`${spaceGrotesk.variable} ${plexMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {children}
       </body>

@@ -1,50 +1,43 @@
-import { streamText, type CoreMessage } from "ai";
-import { defaultOpenRouterModel, openRouter } from "@/lib/ai/openrouter";
-import type { ChatSettings } from "@/features/chat/store/types";
+import { createOpenAI } from '@ai-sdk/openai';
+import { streamText } from 'ai';
 
-type ChatRequest = {
-  messages: Array<{ role: CoreMessage["role"]; content: string }>;
-  settings?: Partial<ChatSettings>;
-};
+// Create OpenRouter client
+const openrouter = createOpenAI({
+    baseURL: 'https://openrouter.ai/api/v1',
+    apiKey: process.env.OPENROUTER_API_KEY ?? '',
+});
 
-const clamp = (value: number, min: number, max: number) =>
-  Math.min(max, Math.max(min, value));
-
-const parseNumber = (value: unknown, fallback: number, min: number, max: number) => {
-  if (typeof value !== "number" || Number.isNaN(value)) {
-    return fallback;
-  }
-  return clamp(value, min, max);
-};
+// Allow streaming responses up to 60 seconds for reasoning models
+export const maxDuration = 60;
 
 export async function POST(req: Request) {
-  if (!process.env.OPENROUTER_API_KEY) {
-    return Response.json(
-      { error: "Missing OPENROUTER_API_KEY in environment." },
-      { status: 500 },
-    );
-  }
+    const { messages, model, temperature, topP, reasoningEffort, system } = await req.json();
 
-  const { messages = [], settings = {} }: ChatRequest = await req.json();
-  const systemPrompt = settings.systemPrompt?.trim();
+    // Default to a sane model if none provided
+    const modelId = model || 'google/gemini-3-flash-preview';
 
-  const coreMessages: CoreMessage[] = [
-    ...(systemPrompt ? [{ role: "system" as const, content: systemPrompt }] : []),
-    ...messages.map((message) => ({
-      role: message.role,
-      content: message.content,
-    })),
-  ];
+    // Build the request body with reasoning support
+    const requestBody: any = {
+        model: openrouter(modelId),
+        messages,
+        system,
+        temperature: temperature ?? 0.7,
+        topP: topP ?? 1,
+    };
 
-  const result = await streamText({
-    model: openRouter(settings.model ?? defaultOpenRouterModel),
-    messages: coreMessages,
-    temperature: parseNumber(settings.temperature, 0.7, 0, 2),
-    maxTokens: parseNumber(settings.maxTokens, 2048, 128, 8192),
-    topP: parseNumber(settings.topP, 0.9, 0, 1),
-    presencePenalty: parseNumber(settings.presencePenalty, 0, -2, 2),
-    frequencyPenalty: parseNumber(settings.frequencyPenalty, 0, -2, 2),
-  });
+    // Add reasoning configuration if not 'none'
+    // OpenRouter uses 'reasoning' parameter with 'effort' field
+    if (reasoningEffort && reasoningEffort !== 'none') {
+        requestBody.providerOptions = {
+            openrouter: {
+                reasoning: {
+                    effort: reasoningEffort,
+                },
+            },
+        };
+    }
 
-  return result.toDataStreamResponse();
+    const result = await streamText(requestBody);
+
+    return result.toTextStreamResponse();
 }

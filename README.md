@@ -1,33 +1,36 @@
-Agent Studio 基于 Next.js + React + Tailwind + Vercel AI SDK + OpenRouter，实现可扩展的对话式工作台。
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
 
-1. 准备环境变量（复制 `.env.example` 为 `.env.local` 并填入 OpenRouter Key）。
-2. 安装依赖并启动开发服务器：
+First, run the development server:
 
 ```bash
 npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
 ```
 
-打开 [http://localhost:3000](http://localhost:3000) 查看应用。
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-## Features
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-- 三栏式 Agent Studio 界面：对话列表 / 对话工作区 / 模型设置。
-- 对话系统与设置系统拆分，支持本地持久化。
-- AI SDK + OpenRouter 流式对话接口。
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-## Architecture
+## Learn More
 
-详细模块化设计与数据流见 `docs/architecture.md`。
+To learn more about Next.js, take a look at the following resources:
 
-## Environment
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-关键环境变量：
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-```
-OPENROUTER_API_KEY=...
-OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
-OPENROUTER_HTTP_REFERER=http://localhost:3000
-OPENROUTER_APP_NAME=Agent Studio
-```
+## Deploy on Vercel
+
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

@@ -1,5 +1,9 @@
-import StudioPage from "@/components/studio-page";
+import { StudioLayout } from "@/components/layout/StudioLayout";
 
 export default function Home() {
-  return <StudioPage />;
+  return (
+    <main className="min-h-screen bg-background text-foreground">
+      <StudioLayout />
+    </main>
+  );
 }
