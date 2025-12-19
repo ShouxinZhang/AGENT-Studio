@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: dark;
+  --studio-bg: #0b0d10;
+  --studio-panel: #12151c;
+  --studio-panel-2: #161b24;
+  --studio-border: #232a36;
+  --studio-text: #e6e9f0;
+  --studio-muted: #97a1b3;
+  --studio-accent: #3cd1a7;
+  --studio-accent-2: #f4b751;
+  --studio-danger: #f07066;
+  --studio-glow: rgba(60, 209, 167, 0.18);
+}
+
+@theme inline {
+  --font-sans: var(--font-space-grotesk);
+  --font-mono: var(--font-plex-mono);
+  --color-studio-bg: var(--studio-bg);
+  --color-studio-panel: var(--studio-panel);
+  --color-studio-panel-2: var(--studio-panel-2);
+  --color-studio-border: var(--studio-border);
+  --color-studio-text: var(--studio-text);
+  --color-studio-muted: var(--studio-muted);
+  --color-studio-accent: var(--studio-accent);
+  --color-studio-accent-2: var(--studio-accent-2);
+  --color-studio-danger: var(--studio-danger);
+}
+
+body {
+  background-color: var(--studio-bg);
+  background-image:
+    radial-gradient(1200px circle at 15% 10%, rgba(60, 209, 167, 0.08), transparent 55%),
+    radial-gradient(900px circle at 85% 0%, rgba(244, 183, 81, 0.12), transparent 50%),
+    linear-gradient(135deg, rgba(21, 26, 35, 0.85), rgba(11, 13, 16, 0.9));
+  color: var(--studio-text);
+  font-family: var(--font-space-grotesk), system-ui, sans-serif;
+  min-height: 100vh;
+}
+
+* {
+  scrollbar-color: rgba(97, 111, 133, 0.6) transparent;
+  scrollbar-width: thin;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: rgba(97, 111, 133, 0.6);
+  border-radius: 999px;
+}
+
+@keyframes float-in {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
