@@ -1,14 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ChatInterface } from "@/components/features/chat/ChatInterface";
 import { SettingsPanel } from "@/components/features/settings/SettingsPanel";
-import { Box, Menu, PanelLeftClose, PanelLeft, PanelRightClose, PanelRight, Plus } from "lucide-react";
+import { Box, Menu, PanelLeftClose, PanelLeft, PanelRightClose, PanelRight, Plus, Trash2, Edit2, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useChatStore } from "@/lib/store/useChatStore";
 
 export function StudioLayout() {
     const [leftPanelOpen, setLeftPanelOpen] = useState(true);
     const [rightPanelOpen, setRightPanelOpen] = useState(true);
+    const conversations = useChatStore((state) => state.conversations);
+    const activeConversationId = useChatStore((state) => state.activeConversationId);
+    const createConversation = useChatStore((state) => state.createConversation);
+    const setActiveConversation = useChatStore((state) => state.setActiveConversation);
+    const deleteConversation = useChatStore((state) => state.deleteConversation);
+    const renameConversation = useChatStore((state) => state.renameConversation);
+    const sortedConversations = useMemo(
+        () => [...conversations].sort((a, b) => b.updatedAt - a.updatedAt),
+        [conversations]
+    );
 
     return (
         <div className="h-screen w-full bg-background flex flex-col overflow-hidden">
@@ -55,17 +66,32 @@ export function StudioLayout() {
                 >
                     <div className="p-3 border-b border-border flex items-center justify-between">
                         <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">History</span>
-                        <button className="p-1 rounded hover:bg-secondary text-muted-foreground hover:text-foreground">
+                        <button
+                            type="button"
+                            className="p-1 rounded hover:bg-secondary text-muted-foreground hover:text-foreground"
+                            onClick={() => createConversation()}
+                        >
                             <Plus size={14} />
                         </button>
                     </div>
                     <div className="flex-1 overflow-y-auto p-2 space-y-1">
-                        <div className="p-2.5 rounded-md bg-primary/10 text-primary text-sm cursor-pointer border border-primary/20">
+                        <button
+                            type="button"
+                            className="w-full text-left p-2.5 rounded-md bg-primary/10 text-primary text-sm cursor-pointer border border-primary/20"
+                            onClick={() => createConversation()}
+                        >
                             New Chat
-                        </div>
-                        <div className="p-2.5 rounded-md hover:bg-secondary text-sm text-muted-foreground cursor-pointer truncate">
-                            Previous conversation...
-                        </div>
+                        </button>
+                        {sortedConversations.map((conversation) => (
+                            <HistoryItem
+                                key={conversation.id}
+                                conversation={conversation}
+                                isActive={conversation.id === activeConversationId}
+                                onSelect={() => setActiveConversation(conversation.id)}
+                                onDelete={() => deleteConversation(conversation.id)}
+                                onRename={(title) => renameConversation(conversation.id, title)}
+                            />
+                        ))}
                     </div>
                 </aside>
 
@@ -83,6 +109,112 @@ export function StudioLayout() {
                 >
                     <SettingsPanel />
                 </aside>
+            </div>
+        </div>
+    );
+}
+
+interface HistoryItemProps {
+    conversation: { id: string; title: string };
+    isActive: boolean;
+    onSelect: () => void;
+    onDelete: () => void;
+    onRename: (title: string) => void;
+}
+
+function HistoryItem({ conversation, isActive, onSelect, onDelete, onRename }: HistoryItemProps) {
+    const [isEditing, setIsEditing] = useState(false);
+    const [title, setTitle] = useState(conversation.title);
+
+    const handleRename = () => {
+        if (title.trim() && title !== conversation.title) {
+            onRename(title.trim());
+        } else {
+            setTitle(conversation.title);
+        }
+        setIsEditing(false);
+    };
+
+    const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Enter") {
+            handleRename();
+        } else if (e.key === "Escape") {
+            setTitle(conversation.title);
+            setIsEditing(false);
+        }
+    };
+
+    if (isEditing) {
+        return (
+            <div className="flex items-center gap-1 p-1 bg-secondary rounded-md">
+                <input
+                    autoFocus
+                    className="flex-1 bg-transparent text-sm outline-none px-1.5 py-1 min-w-0"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    onKeyDown={onKeyDown}
+                    onBlur={handleRename}
+                />
+                <button
+                    onClick={handleRename}
+                    className="p-1 rounded hover:bg-primary/20 text-primary"
+                >
+                    <Check size={12} />
+                </button>
+                <button
+                    onClick={() => {
+                        setTitle(conversation.title);
+                        setIsEditing(false);
+                    }}
+                    className="p-1 rounded hover:bg-destructive/20 text-destructive"
+                >
+                    <X size={12} />
+                </button>
+            </div>
+        );
+    }
+
+    return (
+        <div
+            className={cn(
+                "group flex items-center gap-1 rounded-md text-sm cursor-pointer relative",
+                isActive
+                    ? "bg-secondary text-foreground"
+                    : "hover:bg-secondary text-muted-foreground"
+            )}
+        >
+            <button
+                type="button"
+                className="flex-1 text-left p-2.5 truncate"
+                onClick={onSelect}
+                title={conversation.title}
+            >
+                {conversation.title}
+            </button>
+            <div className={cn(
+                "absolute right-1 flex items-center gap-0.5",
+                isActive ? "flex" : "hidden group-hover:flex"
+            )}>
+                <button
+                    type="button"
+                    className="p-1.5 rounded hover:bg-muted-foreground/20 text-muted-foreground hover:text-foreground"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setIsEditing(true);
+                    }}
+                >
+                    <Edit2 size={12} />
+                </button>
+                <button
+                    type="button"
+                    className="p-1.5 rounded hover:bg-destructive/20 text-muted-foreground hover:text-destructive"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onDelete();
+                    }}
+                >
+                    <Trash2 size={12} />
+                </button>
             </div>
         </div>
     );
