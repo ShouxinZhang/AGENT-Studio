@@ -22,7 +22,7 @@ npm install
 npm run dev
 ```
 
-## 🌟 Key Features
+## ✦ Key Features
 
 - **Modern Intelligent Dialogue**: Supports multi-conversation management, Markdown rendering, and streaming responses.
 - **Flexible Configuration**: Integrated with OpenRouter, supporting custom model parameters and system prompts.
@@ -30,7 +30,7 @@ npm run dev
 - **Elegant UI/UX**: Built with Tailwind CSS 4, supporting responsive layouts (Less critical).
 - **Persistent Storage**: State management using Zustand (Less critical).
 
-## 🛠️ Tech Stack
+## ◈ Tech Stack
 
 - **Framework**: [Next.js 15+](https://nextjs.org)
 - **AI Engine**: [Vercel AI SDK](https://sdk.vercel.ai)
@@ -38,6 +38,8 @@ npm run dev
 - **Styling**: Tailwind CSS 4
 - **State Management**: Zustand
 
-## 📄 License
+---
 
-MIT License
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="MIT License" /></a>
+</p>
