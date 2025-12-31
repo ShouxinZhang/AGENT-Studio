@@ -11,6 +11,8 @@ import { BrainIcon, ChevronDownIcon } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
 import { createContext, memo, useContext, useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 import { Shimmer } from "./shimmer";
 
 type ReasoningContextValue = {
@@ -168,7 +170,12 @@ export const ReasoningContent = memo(
             {...props}
         >
             <div className="prose prose-invert prose-sm max-w-none opacity-80">
-                <ReactMarkdown>{children}</ReactMarkdown>
+                <ReactMarkdown
+                    remarkPlugins={[remarkMath]}
+                    rehypePlugins={[rehypeKatex]}
+                >
+                    {children}
+                </ReactMarkdown>
             </div>
         </CollapsibleContent>
     )

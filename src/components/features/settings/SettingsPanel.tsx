@@ -8,7 +8,7 @@ import { Slider } from "@/components/ui/slider";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronRight, Save, Check } from "lucide-react";
+import { ChevronDown, ChevronRight, Save, Check, Trash2, Plus, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const AVAILABLE_MODELS = [
@@ -39,11 +39,13 @@ export function SettingsPanel() {
         topP: store.topP,
         topK: store.topK,
         reasoningEffort: store.reasoningEffort,
-        systemInstruction: store.systemInstruction,
+        systemInstructions: store.systemInstructions,
+        activeSystemInstructionId: store.activeSystemInstructionId,
     });
 
     const [isAdvancedOpen, setIsAdvancedOpen] = React.useState(false);
     const [isSaved, setIsSaved] = React.useState(false);
+    const [currentView, setCurrentView] = React.useState<"main" | "instructions">("main");
 
     // Sync from store when it loads/changes (e.g. from persistence)
     React.useEffect(() => {
@@ -53,9 +55,10 @@ export function SettingsPanel() {
             topP: store.topP,
             topK: store.topK,
             reasoningEffort: store.reasoningEffort,
-            systemInstruction: store.systemInstruction,
+            systemInstructions: store.systemInstructions,
+            activeSystemInstructionId: store.activeSystemInstructionId,
         });
-    }, [store.model, store.temperature, store.topP, store.topK, store.reasoningEffort, store.systemInstruction]);
+    }, [store.model, store.temperature, store.topP, store.topK, store.reasoningEffort, store.systemInstructions, store.activeSystemInstructionId]);
 
     const handleSave = () => {
         store.setModel(localState.model);
@@ -63,7 +66,12 @@ export function SettingsPanel() {
         store.setTopP(localState.topP);
         store.setTopK(localState.topK);
         store.setReasoningEffort(localState.reasoningEffort);
-        store.setSystemInstruction(localState.systemInstruction);
+        
+        // Sync all instructions back to store
+        localState.systemInstructions.forEach(si => {
+            store.updateSystemInstruction(si.id, { title: si.title, content: si.content });
+        });
+        store.setActiveSystemInstructionId(localState.activeSystemInstructionId);
 
         setIsSaved(true);
         setTimeout(() => setIsSaved(false), 2000);
@@ -72,6 +80,131 @@ export function SettingsPanel() {
     const handleChange = (field: keyof typeof localState, value: any) => {
         setLocalState(prev => ({ ...prev, [field]: value }));
     };
+
+    const handleInstructionChange = (id: string, field: 'title' | 'content', value: string) => {
+        setLocalState(prev => ({
+            ...prev,
+            systemInstructions: prev.systemInstructions.map(si => 
+                si.id === id ? { ...si, [field]: value } : si
+            )
+        }));
+    };
+
+    const handleAddInstruction = () => {
+        const newId = Math.random().toString(36).substring(7);
+        const newInstruction = { id: newId, title: "Untitled instruction", content: "" };
+        setLocalState(prev => ({
+            ...prev,
+            systemInstructions: [...prev.systemInstructions, newInstruction],
+            activeSystemInstructionId: newId
+        }));
+    };
+
+    const handleDeleteInstruction = (id: string) => {
+        setLocalState(prev => {
+            const nextInstructions = prev.systemInstructions.filter(si => si.id !== id);
+            let nextActiveId = prev.activeSystemInstructionId;
+            if (nextActiveId === id) {
+                nextActiveId = nextInstructions.length > 0 ? nextInstructions[0].id : null;
+            }
+            return {
+                ...prev,
+                systemInstructions: nextInstructions,
+                activeSystemInstructionId: nextActiveId
+            };
+        });
+        store.deleteSystemInstruction(id);
+    };
+
+    const activeInstruction = localState.systemInstructions.find(si => si.id === localState.activeSystemInstructionId);
+
+    if (currentView === "instructions") {
+        return (
+            <div className="flex flex-col h-full bg-card text-card-foreground border-l border-border animate-in slide-in-from-right duration-300">
+                <div className="p-4 border-b border-border flex items-center gap-3">
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => setCurrentView("main")}
+                        className="h-8 w-8"
+                    >
+                        <ArrowLeft size={18} />
+                    </Button>
+                    <h3 className="font-semibold text-sm uppercase tracking-wider">System Instructions</h3>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-4 space-y-6">
+                    <div className="space-y-3">
+                        <Label className="text-xs text-muted-foreground uppercase">Select Preset</Label>
+                        <Select
+                            value={localState.activeSystemInstructionId || ""}
+                            onChange={(e) => {
+                                if (e.target.value === "new") {
+                                    handleAddInstruction();
+                                } else {
+                                    handleChange("activeSystemInstructionId", e.target.value);
+                                }
+                            }}
+                            className="bg-secondary/50 border-border/50"
+                        >
+                            <option value="new">+ Create new instruction</option>
+                            {localState.systemInstructions.map((si) => (
+                                <option key={si.id} value={si.id}>
+                                    {si.title}
+                                </option>
+                            ))}
+                        </Select>
+
+                        {activeInstruction && (
+                            <div className="space-y-4 pt-2 animate-in fade-in duration-200">
+                                <div className="space-y-2">
+                                    <Label className="text-xs text-muted-foreground uppercase">Instruction Title</Label>
+                                    <div className="flex gap-2">
+                                        <Input
+                                            placeholder="Title"
+                                            value={activeInstruction.title}
+                                            onChange={(e) => handleInstructionChange(activeInstruction.id, 'title', e.target.value)}
+                                            className="bg-secondary border-none h-10"
+                                        />
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => handleDeleteInstruction(activeInstruction.id)}
+                                            className="h-10 w-10 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                        >
+                                            <Trash2 size={18} />
+                                        </Button>
+                                    </div>
+                                </div>
+                                
+                                <div className="space-y-2">
+                                    <Label className="text-xs text-muted-foreground uppercase">Instructions</Label>
+                                    <Textarea
+                                        placeholder="Optional tone and style instructions for the model"
+                                        className="min-h-[400px] resize-none bg-secondary border-none font-mono text-xs leading-relaxed p-4"
+                                        value={activeInstruction.content}
+                                        onChange={(e) => handleInstructionChange(activeInstruction.id, 'content', e.target.value)}
+                                    />
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <div className="p-4 border-t border-border bg-card/50">
+                    <Button
+                        onClick={() => {
+                            handleSave();
+                            setCurrentView("main");
+                        }}
+                        className="w-full"
+                    >
+                        Done
+                    </Button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col h-full bg-card text-card-foreground border-l border-border">
@@ -170,12 +303,18 @@ export function SettingsPanel() {
 
                 <div className="space-y-4 pt-4 border-t border-border">
                     <h3 className="font-semibold text-sm uppercase tracking-wider text-muted-foreground">System Instructions</h3>
-                    <Textarea
-                        placeholder="Enter system instructions..."
-                        className="min-h-[200px] resize-none bg-secondary border-none font-mono text-xs"
-                        value={localState.systemInstruction}
-                        onChange={(e) => handleChange("systemInstruction", e.target.value)}
-                    />
+                    
+                    <button
+                        onClick={() => setCurrentView("instructions")}
+                        className="w-full text-left p-4 rounded-xl bg-secondary/40 hover:bg-secondary/60 border border-border/50 transition-all group"
+                    >
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-foreground">
+                                {activeInstruction?.title || "System instructions"}
+                            </span>
+                            <ChevronRight size={16} className="text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
+                        </div>
+                    </button>
                 </div>
             </div>
 
