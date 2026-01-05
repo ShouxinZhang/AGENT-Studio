@@ -18,6 +18,7 @@ interface GameSidebarProps {
     onSnakeSettingsChange: (s: SnakeSettings) => void;
     onTetrisSettingsChange: (s: TetrisSettings) => void;
     onDisplayScaleChange: (scale: number) => void;
+    onResetSettings: () => void;
 }
 
 export function GameSidebar({
@@ -32,7 +33,8 @@ export function GameSidebar({
     onStartGame,
     onSnakeSettingsChange,
     onTetrisSettingsChange,
-    onDisplayScaleChange
+    onDisplayScaleChange,
+    onResetSettings
 }: GameSidebarProps) {
     const [activeTab, setActiveTab] = useState<'controls' | 'settings'>('controls');
 
@@ -106,6 +108,16 @@ export function GameSidebar({
                                                 className="w-full accent-cyan-500 h-1 bg-white/10 rounded-lg appearance-none cursor-pointer"
                                             />
                                         </div>
+
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            className="w-full"
+                                            onClick={onResetSettings}
+                                            disabled={isPlaying}
+                                        >
+                                            Reset to Defaults
+                                        </Button>
                                     </div>
 
                                     {gameId === "Snake" && (

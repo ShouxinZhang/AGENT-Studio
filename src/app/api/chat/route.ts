@@ -1,19 +1,31 @@
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { streamText, type UIMessage, type CoreMessage } from 'ai';
+import { DEFAULT_MODEL_ID } from '@/lib/config/llm';
 
-// Create OpenRouter client
-const openrouter = createOpenRouter({
-    apiKey: process.env.OPENROUTER_API_KEY ?? '',
-});
+type ReasoningPart = {
+    type: 'reasoning';
+    text: string;
+    providerOptions?: Record<string, Record<string, unknown>>;
+};
+
+type TextPart = { type: 'text'; text: string };
+
+type AssistantContentPart = TextPart | ReasoningPart;
 
 // Allow streaming responses up to 60 seconds for reasoning models
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
-    const { messages, model, temperature, topP, topK, reasoningEffort, system } = await req.json();
+    const { messages, model, temperature, topP, topK, reasoningEffort, system, openRouterApiKey } = await req.json();
+
+    const apiKey = (typeof openRouterApiKey === 'string' && openRouterApiKey.trim())
+        ? openRouterApiKey.trim()
+        : (process.env.OPENROUTER_API_KEY ?? '');
+
+    const openrouter = createOpenRouter({ apiKey });
 
     // Default to a sane model if none provided
-    const modelId = model || 'google/gemini-3-flash-preview';
+    const modelId = model || DEFAULT_MODEL_ID;
 
     // Determine if reasoning should be enabled and configure settings
     const isGemini = modelId.toLowerCase().includes('gemini');
@@ -24,7 +36,7 @@ export async function POST(req: Request) {
 
     // Build model settings for reasoning
     // OpenRouter uses `reasoning` param with `effort` field
-    const modelSettings: Record<string, any> = {};
+    const modelSettings: Record<string, unknown> = {};
     if (shouldEnableReasoning && effectiveReasoningEffort) {
         modelSettings.reasoning = { effort: effectiveReasoningEffort };
         // Legacy param that may be needed for some models
@@ -46,17 +58,22 @@ export async function POST(req: Request) {
 
         // Assistant messages: preserve complete parts structure (including reasoning)
         // This ensures thought_signature is passed back for Gemini 3.x models
-        const contentParts: Array<{ type: string; text: string; providerOptions?: Record<string, Record<string, unknown>> }> = [];
+        const contentParts: AssistantContentPart[] = [];
 
         for (const part of msg.parts || []) {
             if (part.type === 'text') {
                 contentParts.push({ type: 'text', text: part.text });
             } else if (part.type === 'reasoning') {
+                const providerOptions =
+                    typeof (part as { providerMetadata?: unknown }).providerMetadata === 'object' &&
+                    (part as { providerMetadata?: Record<string, Record<string, unknown>> }).providerMetadata
+                        ? (part as { providerMetadata?: Record<string, Record<string, unknown>> }).providerMetadata
+                        : undefined;
                 contentParts.push({
                     type: 'reasoning',
                     text: part.text,
                     // Preserve provider-specific data (like thought_signature)
-                    providerOptions: (part as any).providerMetadata,
+                    providerOptions,
                 });
             }
         }
@@ -80,7 +97,7 @@ export async function POST(req: Request) {
         return { role: 'assistant', content: contentParts } as CoreMessage;
     });
 
-    const requestBody: Parameters<typeof streamText>[0] = {
+    const requestBody: Parameters<typeof streamText>[0] & { topK?: number } = {
         // Pass model settings (including reasoning config) to the model
         model: openrouter(modelId, modelSettings),
         messages: coreMessages,
@@ -90,7 +107,7 @@ export async function POST(req: Request) {
     };
 
     if (typeof topK === 'number') {
-        (requestBody as any).topK = topK;
+        requestBody.topK = topK;
     }
 
     const result = streamText(requestBody);

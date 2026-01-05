@@ -29,7 +29,7 @@ export const getMessageText = (message: UIMessage) =>
  * 构建 API 请求体
  */
 const getChatBody = () => {
-    const { model, temperature, topP, topK, reasoningEffort, systemInstructions, activeSystemInstructionId } = useSettingsStore.getState();
+    const { model, temperature, topP, topK, reasoningEffort, openRouterApiKey, systemInstructions, activeSystemInstructionId } = useSettingsStore.getState();
     const activeInstruction = systemInstructions.find(si => si.id === activeSystemInstructionId);
 
     return {
@@ -38,6 +38,7 @@ const getChatBody = () => {
         topP,
         topK,
         reasoningEffort,
+        openRouterApiKey,
         system: activeInstruction?.content ?? "",
     };
 };

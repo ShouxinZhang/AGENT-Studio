@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { DEFAULT_MODEL_ID } from '@/lib/config/llm';
 
 export type ReasoningEffort = 'xhigh' | 'high' | 'medium' | 'low' | 'minimal' | 'none';
 
@@ -15,6 +16,7 @@ export interface SettingsState {
     topP: number;
     topK: number;
     reasoningEffort: ReasoningEffort;
+    openRouterApiKey: string;
     systemInstructions: SystemInstruction[];
     activeSystemInstructionId: string | null;
     setModel: (model: string) => void;
@@ -22,10 +24,19 @@ export interface SettingsState {
     setTopP: (topP: number) => void;
     setTopK: (topK: number) => void;
     setReasoningEffort: (effort: ReasoningEffort) => void;
+    setOpenRouterApiKey: (apiKey: string) => void;
     addSystemInstruction: (instruction: Omit<SystemInstruction, 'id'>) => string;
     updateSystemInstruction: (id: string, updates: Partial<Omit<SystemInstruction, 'id'>>) => void;
     deleteSystemInstruction: (id: string) => void;
+    setSystemInstructions: (systemInstructions: SystemInstruction[], activeSystemInstructionId: string | null) => void;
     setActiveSystemInstructionId: (id: string | null) => void;
+}
+
+function generateId(): string {
+    if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+        return crypto.randomUUID();
+    }
+    return Math.random().toString(36).slice(2);
 }
 
 const DEFAULT_INSTRUCTIONS: SystemInstruction[] = [
@@ -35,12 +46,13 @@ const DEFAULT_INSTRUCTIONS: SystemInstruction[] = [
 
 export const useSettingsStore = create<SettingsState>()(
     persist(
-        (set, get) => ({
-            model: 'google/gemini-3-flash-preview',
+        (set) => ({
+            model: DEFAULT_MODEL_ID,
             temperature: 1.0,
             topP: 0.95,
             topK: 40,
             reasoningEffort: 'medium',
+            openRouterApiKey: '',
             systemInstructions: DEFAULT_INSTRUCTIONS,
             activeSystemInstructionId: 'default-1',
             setModel: (model) => set({ model }),
@@ -48,8 +60,9 @@ export const useSettingsStore = create<SettingsState>()(
             setTopP: (topP) => set({ topP }),
             setTopK: (topK) => set({ topK }),
             setReasoningEffort: (reasoningEffort) => set({ reasoningEffort }),
+            setOpenRouterApiKey: (openRouterApiKey) => set({ openRouterApiKey }),
             addSystemInstruction: (instruction) => {
-                const id = Math.random().toString(36).substring(7);
+                const id = generateId();
                 set((state) => ({
                     systemInstructions: [...state.systemInstructions, { ...instruction, id }],
                     activeSystemInstructionId: id,
@@ -72,6 +85,18 @@ export const useSettingsStore = create<SettingsState>()(
                     }
                     return {
                         systemInstructions: nextInstructions,
+                        activeSystemInstructionId: nextActiveId,
+                    };
+                });
+            },
+            setSystemInstructions: (systemInstructions, activeSystemInstructionId) => {
+                set(() => {
+                    const ids = new Set(systemInstructions.map((si) => si.id));
+                    const nextActiveId = activeSystemInstructionId && ids.has(activeSystemInstructionId)
+                        ? activeSystemInstructionId
+                        : (systemInstructions.length > 0 ? systemInstructions[0].id : null);
+                    return {
+                        systemInstructions,
                         activeSystemInstructionId: nextActiveId,
                     };
                 });

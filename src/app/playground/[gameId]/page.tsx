@@ -11,7 +11,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { getGameById } from "@/lib/games/registry";
-import { SnakeSettings, TetrisSettings } from "@/components/games/types";
+import { usePlaygroundSettingsStore } from "@/lib/store/usePlaygroundSettingsStore";
 import { 
     useGameSession, 
     useGameLoop, 
@@ -21,20 +21,6 @@ import {
     GameStats,
     GameSidebar
 } from "@/components/features/playground";
-
-// 默认设置
-const DEFAULT_SNAKE_SETTINGS: SnakeSettings = {
-    gridSize: 15,
-    speed: 120,
-    allow180: false,
-    wrapWalls: false,
-    dieOnSelfCollision: true,
-};
-
-const DEFAULT_TETRIS_SETTINGS: TetrisSettings = {
-    speed: 500,
-    startLevel: 1,
-};
 
 export default function GamePage() {
     const params = useParams();
@@ -55,15 +41,14 @@ export default function GamePage() {
     
     // UI 状态
     const [showPanel, setShowPanel] = useState(true);
-    const [snakeSettings, setSnakeSettings] = useState<SnakeSettings>(DEFAULT_SNAKE_SETTINGS);
-    const [tetrisSettings, setTetrisSettings] = useState<TetrisSettings>(DEFAULT_TETRIS_SETTINGS);
 
-    const [displayScale, setDisplayScale] = useState<number>(() => {
-        if (typeof window === 'undefined') return 100;
-        const raw = window.localStorage.getItem('agentstudio.displayScale');
-        const value = raw ? Number(raw) : 100;
-        return Number.isFinite(value) ? Math.min(160, Math.max(50, value)) : 100;
-    });
+    const displayScale = usePlaygroundSettingsStore((s) => s.displayScale);
+    const snakeSettings = usePlaygroundSettingsStore((s) => s.snakeSettings);
+    const tetrisSettings = usePlaygroundSettingsStore((s) => s.tetrisSettings);
+    const setDisplayScale = usePlaygroundSettingsStore((s) => s.setDisplayScale);
+    const setSnakeSettings = usePlaygroundSettingsStore((s) => s.setSnakeSettings);
+    const setTetrisSettings = usePlaygroundSettingsStore((s) => s.setTetrisSettings);
+    const resetSettings = usePlaygroundSettingsStore((s) => s.resetToDefaults);
 
     const displayTitle = gameConfig?.name ?? gameId;
     const currentSpeed = gameId === "Tetris" ? tetrisSettings.speed : snakeSettings.speed;
@@ -76,11 +61,6 @@ export default function GamePage() {
         window.addEventListener('resize', update);
         return () => window.removeEventListener('resize', update);
     }, []);
-
-    useEffect(() => {
-        if (typeof window === 'undefined') return;
-        window.localStorage.setItem('agentstudio.displayScale', String(displayScale));
-    }, [displayScale]);
 
     // 游戏循环
     useGameLoop(isPlaying, sessionId, gameId, currentSpeed, sendAction);
@@ -169,6 +149,7 @@ export default function GamePage() {
                     onSnakeSettingsChange={setSnakeSettings}
                     onTetrisSettingsChange={setTetrisSettings}
                     onDisplayScaleChange={setDisplayScale}
+                    onResetSettings={resetSettings}
                 />
             </div>
         </div>
