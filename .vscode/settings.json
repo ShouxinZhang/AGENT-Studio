@@ -1,0 +1,14 @@
+{
+  "python.analysis.exclude": [
+    "**/node_modules/**",
+    "**/.next/**",
+    "backend/.venv/**"
+  ],
+  "python.analysis.typeCheckingMode": "off",
+  "python.analysis.diagnosticMode": "openFilesOnly",
+  "python.analysis.diagnosticSeverityOverrides": {
+    "reportArgumentType": "none",
+    "reportAttributeAccessIssue": "none",
+    "reportOptionalMemberAccess": "none"
+  }
+}

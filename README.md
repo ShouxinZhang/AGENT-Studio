@@ -9,11 +9,11 @@ AGENT Studio is a modern AI agent development and interaction workbench, designe
 The project includes an automation script, which is recommended for direct use:
 
 ```bash
-chmod +x restart_web.sh
-./restart_web.sh
+chmod +x restart.sh
+./restart.sh
 ```
 
-This script will automatically: Clear port 3105 occupancy -> Check/Install dependencies -> Start development server.
+This script will automatically: Clear port 3115 occupancy -> Check/Install dependencies -> Start development server.
 
 ### Method 2: Manual Start
 
@@ -26,7 +26,7 @@ npm run dev
 
 - **Modern Intelligent Dialogue**: Supports multi-conversation management, Markdown rendering, and streaming responses.
 - **Flexible Configuration**: Integrated with OpenRouter, supporting custom model parameters and system prompts.
-- **Automated Operations**: Built-in `restart_web.sh` script for automatic port cleaning, dependency checking, and one-click restart.
+- **Automated Operations**: Built-in `restart.sh` script for automatic port cleaning, dependency checking, and one-click restart.
 - **Elegant UI/UX**: Built with Tailwind CSS 4, supporting responsive layouts (Less critical).
 - **Persistent Storage**: State management using Zustand (Less critical).
 

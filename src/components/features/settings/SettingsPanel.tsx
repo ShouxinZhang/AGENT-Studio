@@ -8,7 +8,7 @@ import { Slider } from "@/components/ui/slider";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronRight, Save, Check, Trash2, Plus, ArrowLeft } from "lucide-react";
+import { ChevronDown, ChevronRight, Save, Check, Trash2, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const AVAILABLE_MODELS = [
@@ -32,8 +32,18 @@ const REASONING_EFFORT_OPTIONS: { value: ReasoningEffort; label: string }[] = [
 export function SettingsPanel() {
     const store = useSettingsStore();
 
+    type LocalState = {
+        model: string;
+        temperature: number;
+        topP: number;
+        topK: number;
+        reasoningEffort: ReasoningEffort;
+        systemInstructions: typeof store.systemInstructions;
+        activeSystemInstructionId: typeof store.activeSystemInstructionId;
+    };
+
     // Local state for form fields
-    const [localState, setLocalState] = React.useState({
+    const [localState, setLocalState] = React.useState<LocalState>(() => ({
         model: store.model,
         temperature: store.temperature,
         topP: store.topP,
@@ -41,7 +51,7 @@ export function SettingsPanel() {
         reasoningEffort: store.reasoningEffort,
         systemInstructions: store.systemInstructions,
         activeSystemInstructionId: store.activeSystemInstructionId,
-    });
+    }));
 
     const [isAdvancedOpen, setIsAdvancedOpen] = React.useState(false);
     const [isSaved, setIsSaved] = React.useState(false);
@@ -77,7 +87,7 @@ export function SettingsPanel() {
         setTimeout(() => setIsSaved(false), 2000);
     };
 
-    const handleChange = (field: keyof typeof localState, value: any) => {
+    const handleChange = <K extends keyof LocalState>(field: K, value: LocalState[K]) => {
         setLocalState(prev => ({ ...prev, [field]: value }));
     };
 

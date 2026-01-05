@@ -3,9 +3,10 @@
 import { useMemo, useState } from "react";
 import { ChatInterface } from "@/components/features/chat/ChatInterface";
 import { SettingsPanel } from "@/components/features/settings/SettingsPanel";
-import { Box, Menu, PanelLeftClose, PanelLeft, PanelRightClose, PanelRight, Plus, Trash2, Edit2, Check, X } from "lucide-react";
+import { Box, Menu, PanelLeftClose, PanelLeft, PanelRightClose, PanelRight, Plus, Trash2, Edit2, Check, X, Gamepad2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useChatStore } from "@/lib/store/useChatStore";
+import Link from "next/link";
 
 export function StudioLayout() {
     const [leftPanelOpen, setLeftPanelOpen] = useState(true);
@@ -43,7 +44,13 @@ export function StudioLayout() {
                 </div>
 
                 <div className="ml-auto flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground px-2 py-1 rounded bg-secondary">Playground</span>
+                    <Link 
+                        href="/playground" 
+                        className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground px-2.5 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 hover:text-foreground transition-all border border-border/50 shadow-sm"
+                    >
+                        <Gamepad2 size={14} className="text-indigo-500" />
+                        <span>Game Playground</span>
+                    </Link>
 
                     {/* Toggle Right Panel */}
                     <button
