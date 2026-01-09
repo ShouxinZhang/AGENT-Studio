@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { ChatInterface } from "@/components/features/chat/ChatInterface";
 import { SettingsPanel } from "@/components/features/settings/SettingsPanel";
-import { Box, Menu, PanelLeftClose, PanelLeft, PanelRightClose, PanelRight, Plus, Trash2, Edit2, Check, X, Gamepad2 } from "lucide-react";
+import { Box, Menu, PanelLeftClose, PanelLeft, PanelRightClose, PanelRight, Plus, Trash2, Edit2, Check, X, Gamepad2, GraduationCap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useChatStore } from "@/lib/store/useChatStore";
 import Link from "next/link";
@@ -44,6 +44,14 @@ export function StudioLayout() {
                 </div>
 
                 <div className="ml-auto flex items-center gap-2">
+                    <Link 
+                        href="/learning" 
+                        className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground px-2.5 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 hover:text-foreground transition-all border border-border/50 shadow-sm"
+                    >
+                        <GraduationCap size={14} className="text-blue-500" />
+                        <span>Learning Lab</span>
+                    </Link>
+
                     <Link 
                         href="/playground" 
                         className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground px-2.5 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 hover:text-foreground transition-all border border-border/50 shadow-sm"

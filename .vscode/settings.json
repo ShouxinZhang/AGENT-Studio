@@ -1,4 +1,8 @@
 {
+  "python.defaultInterpreterPath": "${workspaceFolder}/backend/.venv/bin/python",
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/backend"
+  ],
   "python.analysis.exclude": [
     "**/node_modules/**",
     "**/.next/**",
@@ -9,6 +13,8 @@
   "python.analysis.diagnosticSeverityOverrides": {
     "reportArgumentType": "none",
     "reportAttributeAccessIssue": "none",
-    "reportOptionalMemberAccess": "none"
-  }
+    "reportOptionalMemberAccess": "none",
+    "reportMissingImports": "none"
+  },
+  "python-envs.pythonProjects": []
 }

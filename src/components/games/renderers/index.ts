@@ -4,3 +4,4 @@
 
 export { renderSnake } from './SnakeRenderer';
 export { renderTetris } from './TetrisRenderer';
+export { renderDoudizhu } from './DoudizhuRenderer';

@@ -8,3 +8,5 @@ openai>=1.10.0
 gymnasium[classic_control]>=0.29.1
 numpy>=1.26.0
 pillow>=10.2.0
+
+

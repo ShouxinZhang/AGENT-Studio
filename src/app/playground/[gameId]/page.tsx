@@ -86,6 +86,10 @@ export default function GamePage() {
                 wrap_walls: snakeSettings.wrapWalls,
                 die_on_self_collision: snakeSettings.dieOnSelfCollision,
             };
+        } else if (gameId === "Doudizhu") {
+            config = {
+                mode: "classic", // or "tiandi_laizi"
+            };
         } else {
             config = {};
         }

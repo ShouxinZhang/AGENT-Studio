@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { GameScene, SnakeScene, TetrisScene } from '@/components/games/types';
-import { renderSnake, renderTetris } from '@/components/games/renderers';
+import { GameScene, SnakeScene, TetrisScene, DoudizhuScene } from '@/components/games/types';
+import { renderSnake, renderTetris, renderDoudizhu } from '@/components/games/renderers';
 
 interface GameCanvasProps {
     gameId: string;
@@ -63,6 +63,26 @@ export function GameCanvas({ gameId, scene, frame, scale, viewport, showPanel }:
         const ctx = canvas.getContext("2d");
         if (!ctx) return;
         renderTetris(ctx, tetrisScene, scaledW, scaledH);
+    }, [scene, gameId, scaledW, scaledH]);
+
+    // Render Doudizhu
+    useEffect(() => {
+        if (!scene || gameId !== "Doudizhu") return;
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+
+        const doudizhuScene = scene as DoudizhuScene;
+        
+        // Fixed aspect ratio for card game
+        const width = Math.min(scaledW, 800);
+        const height = Math.min(scaledH, 600);
+
+        if (canvas.width !== width) canvas.width = width;
+        if (canvas.height !== height) canvas.height = height;
+
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+        renderDoudizhu(ctx, doudizhuScene, width, height);
     }, [scene, gameId, scaledW, scaledH]);
 
     if (frame) {

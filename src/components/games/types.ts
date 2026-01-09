@@ -35,8 +35,28 @@ export type TetrisScene = {
     level: number;
 };
 
+// Doudizhu 游戏场景
+export type DoudizhuScene = {
+    landlord: number;
+    holeCards: string[];
+    laizi: string[];
+    players: {
+        id: number;
+        role: "landlord" | "peasant";
+        handCount: number;
+        hand: string[];
+        isTurn: boolean;
+    }[];
+    lastMove: {
+        player: number;
+        cards: string[];
+        type: string;
+    };
+    winner: number;
+};
+
 // 通用游戏场景类型
-export type GameScene = SnakeScene | TetrisScene;
+export type GameScene = SnakeScene | TetrisScene | DoudizhuScene;
 
 // 游戏设置
 export interface SnakeSettings {
@@ -52,7 +72,11 @@ export interface TetrisSettings {
     startLevel: number;
 }
 
-export type GameSettings = SnakeSettings | TetrisSettings;
+export interface DoudizhuSettings {
+    mode: "classic" | "tiandi_laizi";
+}
+
+export type GameSettings = SnakeSettings | TetrisSettings | DoudizhuSettings;
 
 // 渲染器 Props
 export interface GameRendererProps {

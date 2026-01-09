@@ -1,7 +1,6 @@
 from typing import Any, Dict, Optional
 from .gym_wrapper import GymEnvironment
-from .games.snake import SnakeEnvironment
-from .games.tetris import TetrisEnvironment
+from .games import SnakeEnvironment, TetrisEnvironment, DoudizhuEnvironment
 import uuid
 
 class SessionManager:
@@ -34,6 +33,9 @@ class SessionManager:
                     grid_h=grid_h,
                     start_level=start_level,
                 )
+            case "Doudizhu":
+                mode = config.get("mode", "classic")
+                self.sessions[session_id] = DoudizhuEnvironment(mode=mode)
             case _:
                 self.sessions[session_id] = GymEnvironment(env_id)
         return session_id

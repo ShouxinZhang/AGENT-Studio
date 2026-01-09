@@ -45,3 +45,24 @@ backend/venv/
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# ML / training artifacts
+*.pth
+
+# docs (requested to keep out of git)
+/docs/
+
+# local run artifacts / logs
+/artifacts/
+*.log
+*.pid
+*.jsonl
+
+# python bytecode / caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pyright/

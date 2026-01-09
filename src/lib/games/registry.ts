@@ -94,6 +94,18 @@ export const GAMES: GameConfig[] = [
         controls: { keyboard: ["←", "→", "↑", "Z", "↓", "Space"], description: "Arrows + Z + Space" },
     },
     {
+        id: "Doudizhu",
+        name: "DOU DIZHU",
+        description: "Classic / LaiZi",
+        category: "arcade",
+        color: "from-amber-600 to-yellow-600",
+        borderColor: "border-amber-600",
+        shadowColor: "shadow-amber-600/50",
+        emoji: "🃏",
+        available: true,
+        renderMode: "scene",
+    },
+    {
         id: "Pacman",
         name: "PAC-MAN",
         description: "Eat dots, avoid ghosts!",
