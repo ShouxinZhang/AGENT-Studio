@@ -1,19 +1,9 @@
 "use client";
 
-import React, { useRef, useEffect, useState } from 'react';
-import { Pencil, Eraser, Trash2, Undo } from 'lucide-react';
+import React, { useRef, useEffect } from 'react';
 import { cn } from "@/lib/utils";
 
-export interface Point {
-    x: number;
-    y: number;
-}
-
-export interface Stroke {
-    points: Point[];
-    color: string;
-    width: number;
-}
+import { Stroke, Point } from '../types';
 
 interface GraffitiCanvasProps {
     className?: string;

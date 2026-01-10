@@ -9,10 +9,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ShouxinZhang/AGENT-Studio/services/learning-go/internal/config"
-	"github.com/ShouxinZhang/AGENT-Studio/services/learning-go/internal/db"
-	apphttp "github.com/ShouxinZhang/AGENT-Studio/services/learning-go/internal/http"
-	"github.com/ShouxinZhang/AGENT-Studio/services/learning-go/internal/repo"
+	"github.com/ShouxinZhang/AGENT-Studio/backend/learning-go/internal/config"
+	"github.com/ShouxinZhang/AGENT-Studio/backend/learning-go/internal/db"
+	apphttp "github.com/ShouxinZhang/AGENT-Studio/backend/learning-go/internal/http"
+	"github.com/ShouxinZhang/AGENT-Studio/backend/learning-go/internal/repo"
 )
 
 func main() {

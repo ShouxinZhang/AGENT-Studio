@@ -9,7 +9,7 @@
 FRONTEND_PORT=3115
 BACKEND_PORT=8000
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
-BACKEND_DIR="$PROJECT_DIR/backend"
+BACKEND_DIR="$PROJECT_DIR/backend/game-py"
 
 # 颜色输出
 RED='\033[0;31m'

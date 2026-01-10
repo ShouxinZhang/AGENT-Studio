@@ -10,13 +10,20 @@ chmod +x restart.sh && ./restart.sh
 
 # Or run manually
 npm install && npm run dev        # Frontend :3115
-cd backend && pip install -r requirements.txt && python main.py  # Backend  :8000
+cd backend/game-py && pip install -r requirements.txt && python main.py  # Backend  :8000
+
+# Learning backend (Go) + Postgres
+docker compose -f backend/infra/postgres/compose.yml up -d
+cd backend/learning-go && DATABASE_URL='postgresql://agent_studio:agent_studio@localhost:5432/agent_studio?sslmode=disable' go run ./cmd/server
 ```
 
 Configure `.env.local`:
 
 ```
 OPENROUTER_API_KEY=your_key
+
+# Optional: override Learning API base URL (default: http://localhost:8081)
+# NEXT_PUBLIC_LEARNING_API_BASE_URL=http://localhost:8081
 ```
 
 ## 🗺️ Roadmap (Planned)

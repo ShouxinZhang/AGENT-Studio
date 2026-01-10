@@ -12,6 +12,13 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+
+    // Repo-specific ignores (avoid scanning Python envs / large artifacts):
+    "backend/**/.venv/**",
+    "backend/**/venv/**",
+    ".venv/**",
+    "venv/**",
+    "artifacts/**",
   ]),
   {
     rules: {
