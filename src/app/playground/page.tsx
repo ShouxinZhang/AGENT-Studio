@@ -7,7 +7,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CATEGORIES, getGamesByCategory, type GameConfig } from "@/lib/games/registry";
 
-const BACKEND_URL = "http://localhost:8000";
+// 生产环境用相对路径（通过 Nginx 代理），本地开发直连
+const BACKEND_URL = typeof window !== 'undefined' && window.location.hostname !== 'localhost'
+    ? '/api'  // 生产环境：通过 Nginx 代理
+    : 'http://localhost:8000';  // 本地开发
 
 export default function PlaygroundPage() {
     const router = useRouter();
