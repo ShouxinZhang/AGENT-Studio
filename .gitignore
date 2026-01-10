@@ -1,8 +1,14 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# ============================================
+# 项目通用忽略规则（会被推送到 Git）
+# 本地特有规则请写在 .git/info/exclude
+# ============================================
 
-# dependencies
-/node_modules
-/.pnp
+# === Node.js / Next.js ===
+node_modules/
+.next/
+out/
+build/
+.pnp
 .pnp.*
 .yarn/*
 !.yarn/patches
@@ -10,62 +16,40 @@
 !.yarn/releases
 !.yarn/versions
 
-# testing
-/coverage
-
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# misc
-.DS_Store
-*.pem
-
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-
-# env files (can opt-in for committing if needed)
-.env*
-
-# python virtual environments
-.venv/
-venv/
-backend/.venv/
-backend/venv/
-
-# vercel
-.vercel
-
-# typescript
-*.tsbuildinfo
-next-env.d.ts
-
-# ML / training artifacts
-*.pth
-
-# docs (requested to keep out of git)
-/docs/
-
-# local run artifacts / logs
-/artifacts/
-*.log
-*.pid
-*.jsonl
-
-# python bytecode / caches
+# === Python ===
 __pycache__/
 *.py[cod]
 *$py.class
+.venv/
+venv/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
 .pyright/
 
-# Deployment scripts (contain server-specific configs)
-deploy/
+# === 环境变量 ===
+.env
+.env.*
+!.env.example
+
+# === IDE / 编辑器 ===
+.idea/
+*.swp
+*~
+.DS_Store
+
+# === 构建产物 ===
+*.tsbuildinfo
+coverage/
+
+# === 密钥文件 ===
+*.pem
+*.key
+
+# === ML / 训练产物 ===
+*.pth
+*.ckpt
+*.safetensors
+
+# === Vercel ===
+.vercel
