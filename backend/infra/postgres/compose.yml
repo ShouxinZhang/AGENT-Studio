@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: agent-studio-postgres
+    ports:
+      - "${AGENT_STUDIO_PG_PORT:-5432}:5432"
+    environment:
+      POSTGRES_DB: ${AGENT_STUDIO_PG_DB:-agent_studio}
+      POSTGRES_USER: ${AGENT_STUDIO_PG_USER:-agent_studio}
+      POSTGRES_PASSWORD: ${AGENT_STUDIO_PG_PASSWORD:-agent_studio}
+    volumes:
+      - agent_studio_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+
+volumes:
+  agent_studio_pgdata:
