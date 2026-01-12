@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { ChatInterface } from "@/components/features/chat/ChatInterface";
 import { SettingsPanel } from "@/components/features/settings/SettingsPanel";
-import { Box, Menu, PanelLeftClose, PanelLeft, PanelRightClose, PanelRight, Plus, Trash2, Edit2, Check, X, Gamepad2, GraduationCap } from "lucide-react";
+import { Box, PanelLeftClose, PanelLeft, PanelRightClose, PanelRight, Plus, Trash2, Edit2, Check, X, Gamepad2, GraduationCap, Database } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useChatStore } from "@/lib/store/useChatStore";
 import Link from "next/link";
@@ -58,6 +58,14 @@ export function StudioLayout() {
                     >
                         <Gamepad2 size={14} className="text-indigo-500" />
                         <span>Game Playground</span>
+                    </Link>
+
+                    <Link 
+                        href="/sql" 
+                        className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground px-2.5 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 hover:text-foreground transition-all border border-border/50 shadow-sm"
+                    >
+                        <Database size={14} className="text-emerald-500" />
+                        <span>SQL Studio</span>
                     </Link>
 
                     {/* Toggle Right Panel */}

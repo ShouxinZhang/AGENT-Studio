@@ -15,7 +15,9 @@
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, StopCircle } from "lucide-react";
+import type { ChatPendingFile } from "../types";
+import { Paperclip, Send, StopCircle, X } from "lucide-react";
+import { useCallback, useRef, useState } from "react";
 
 /** ChatInput 组件属性 */
 interface ChatInputProps {
@@ -31,6 +33,15 @@ interface ChatInputProps {
     onSubmit: (e?: React.FormEvent<HTMLFormElement>) => void;
     /** 停止生成回调 */
     onStop: () => void;
+
+    /** 已上传待发送附件 */
+    attachments: ChatPendingFile[];
+    /** 是否正在上传附件 */
+    isUploadingAttachments: boolean;
+    /** 添加文件（触发上传） */
+    onAddFiles: (files: File[]) => void | Promise<void>;
+    /** 移除单个附件 */
+    onRemoveAttachment: (id: string) => void;
 }
 
 export function ChatInput({
@@ -40,19 +51,160 @@ export function ChatInput({
     onKeyDown,
     onSubmit,
     onStop,
+    attachments,
+    isUploadingAttachments,
+    onAddFiles,
+    onRemoveAttachment,
 }: ChatInputProps) {
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
+    const [isDragging, setIsDragging] = useState(false);
+
+    const acceptFiles = useCallback(
+        async (fileList: FileList | null) => {
+            const files = fileList ? Array.from(fileList) : [];
+            if (files.length === 0) return;
+            await onAddFiles(files);
+        },
+        [onAddFiles]
+    );
+
+    const onDrop = useCallback(
+        async (e: React.DragEvent) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsDragging(false);
+            await acceptFiles(e.dataTransfer?.files ?? null);
+        },
+        [acceptFiles]
+    );
+
+    const onDragEnter = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(true);
+    }, []);
+
+    const onDragOver = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!isDragging) setIsDragging(true);
+    }, [isDragging]);
+
+    const onDragLeave = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const to = e.relatedTarget as Node | null;
+        if (to && e.currentTarget.contains(to)) return;
+        setIsDragging(false);
+    }, []);
+
+    const onPaste = useCallback(
+        async (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+            if (isLoading || isUploadingAttachments) return;
+            const items = e.clipboardData?.items;
+            if (!items) return;
+            const files: File[] = [];
+            for (const item of items) {
+                if (item.kind === "file") {
+                    const f = item.getAsFile();
+                    if (f) files.push(f);
+                }
+            }
+            if (files.length > 0) {
+                e.preventDefault();
+                await onAddFiles(files);
+            }
+        },
+        [isLoading, isUploadingAttachments, onAddFiles]
+    );
+
+    const canSend = (!isLoading && !isUploadingAttachments) && (input.trim().length > 0 || attachments.length > 0);
+
     return (
-        <div className="p-4 border-t border-border bg-background">
+        <div
+            className="p-4 border-t border-border bg-background"
+            onDragEnter={onDragEnter}
+            onDragOver={onDragOver}
+            onDragLeave={onDragLeave}
+            onDrop={onDrop}
+        >
             <form onSubmit={onSubmit} className="max-w-3xl mx-auto relative flex gap-2 items-end">
                 <div className="relative flex-1">
+                    {attachments.length > 0 && (
+                        <div className="mb-2 flex flex-wrap gap-2">
+                            {attachments.map((a) => (
+                                <div
+                                    key={a.id}
+                                    className="flex items-center gap-2 rounded-md border border-border bg-secondary/40 px-2 py-1 text-xs"
+                                >
+                                    {a.file.type.startsWith("image/") ? (
+                                        <img
+                                            src={a.previewUrl}
+                                            alt={a.file.name}
+                                            className="h-8 w-8 rounded object-cover border border-border/60"
+                                        />
+                                    ) : (
+                                        <div className="h-8 w-8 rounded bg-background/40 border border-border/60 flex items-center justify-center text-muted-foreground">
+                                            <Paperclip size={14} />
+                                        </div>
+                                    )}
+                                    <div className="max-w-[220px] truncate" title={a.file.name}>
+                                        {a.file.name}
+                                    </div>
+                                    <button
+                                        type="button"
+                                        className="text-muted-foreground hover:text-foreground"
+                                        onClick={() => onRemoveAttachment(a.id)}
+                                        aria-label="Remove attachment"
+                                    >
+                                        <X size={14} />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    <div className="relative">
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            multiple
+                            className="hidden"
+                            onChange={async (e) => {
+                                await acceptFiles(e.target.files);
+                                e.currentTarget.value = "";
+                            }}
+                        />
+                        <button
+                            type="button"
+                            className="absolute left-2 bottom-2 p-2 rounded hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={isLoading || isUploadingAttachments}
+                            aria-label="Attach files"
+                        >
+                            <Paperclip size={16} />
+                        </button>
+
                     <Textarea
                         value={input}
                         onChange={onInputChange}
                         onKeyDown={onKeyDown}
+                        onPaste={onPaste}
                         placeholder="Type your message here..."
-                        className="min-h-[50px] max-h-[200px] pr-12 resize-none bg-secondary/50 border-transparent focus:border-primary/50"
+                        className="min-h-[50px] max-h-[200px] pl-12 pr-12 resize-none bg-secondary/50 border-transparent focus:border-primary/50"
                         rows={1}
                     />
+                    </div>
+
+                    {isUploadingAttachments && (
+                        <div className="mt-2 text-xs text-muted-foreground">Uploading attachments…</div>
+                    )}
+
+                    {isDragging && (
+                        <div className="absolute inset-0 rounded-md border-2 border-dashed border-primary/60 bg-background/60 backdrop-blur-sm flex items-center justify-center text-sm font-medium text-foreground">
+                            Drop files to attach
+                        </div>
+                    )}
                 </div>
 
                 {isLoading ? (
@@ -68,7 +220,7 @@ export function ChatInput({
                     <Button
                         type="submit"
                         size="icon"
-                        disabled={!input.trim() || isLoading}
+                        disabled={!canSend}
                     >
                         <Send size={18} />
                     </Button>

@@ -1,6 +1,7 @@
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { streamText, type UIMessage, type CoreMessage } from 'ai';
 import { DEFAULT_MODEL_ID } from '@/lib/config/llm';
+import type { FilePart, ImagePart } from '@ai-sdk/provider-utils';
 
 type ReasoningPart = {
     type: 'reasoning';
@@ -11,6 +12,33 @@ type ReasoningPart = {
 type TextPart = { type: 'text'; text: string };
 
 type AssistantContentPart = TextPart | ReasoningPart;
+
+type UserContentPart = TextPart | ImagePart | FilePart;
+
+function splitDataUrl(dataUrl: string): { mediaType?: string; base64Content?: string } {
+    const [header, base64Content] = dataUrl.split(',');
+    if (!header || !base64Content) return {};
+    const match = header.match(/^data:([^;]+);base64$/);
+    return { mediaType: match?.[1], base64Content };
+}
+
+function toDataContentOrUrl(url: string, reqUrl: string): { data?: string; url?: URL } {
+    if (url.startsWith('data:')) {
+        const { base64Content } = splitDataUrl(url);
+        if (base64Content) return { data: base64Content };
+        return {};
+    }
+
+    try {
+        if (url.startsWith('/')) {
+            const origin = new URL(reqUrl).origin;
+            return { url: new URL(url, origin) };
+        }
+        return { url: new URL(url) };
+    } catch {
+        return {};
+    }
+}
 
 // Allow streaming responses up to 60 seconds for reasoning models
 export const maxDuration = 60;
@@ -48,12 +76,49 @@ export async function POST(req: Request) {
     // This is crucial for Gemini 3.x models which require thought_signature in multi-turn conversations
     const coreMessages = (messages as UIMessage[]).map((msg): CoreMessage => {
         if (msg.role === 'user') {
-            // User messages: extract plain text only
-            const textContent = msg.parts
-                ?.filter((part): part is { type: 'text'; text: string } => part.type === 'text')
-                .map((part) => part.text)
-                .join('') || '';
-            return { role: 'user', content: textContent };
+            const contentParts: UserContentPart[] = [];
+
+            for (const part of msg.parts || []) {
+                if (part.type === 'text') {
+                    contentParts.push({ type: 'text', text: part.text });
+                    continue;
+                }
+
+                if (part.type === 'file') {
+                    const filePart = part as { type: 'file'; url: string; mediaType: string; filename?: string };
+                    const resolved = toDataContentOrUrl(filePart.url, req.url);
+
+                    if (filePart.mediaType?.startsWith('image/')) {
+                        if (resolved.data) {
+                            contentParts.push({ type: 'image', image: resolved.data, mediaType: filePart.mediaType });
+                        } else if (resolved.url) {
+                            contentParts.push({ type: 'image', image: resolved.url, mediaType: filePart.mediaType });
+                        }
+                    } else {
+                        if (resolved.data) {
+                            contentParts.push({ type: 'file', data: resolved.data, mediaType: filePart.mediaType, filename: filePart.filename });
+                        } else if (resolved.url) {
+                            contentParts.push({ type: 'file', data: resolved.url, mediaType: filePart.mediaType, filename: filePart.filename });
+                        }
+                    }
+                }
+            }
+
+            // Back-compat: if only text exists, keep string form.
+            const hasOnlyTextParts = contentParts.length > 0 && contentParts.every(p => p.type === 'text');
+            if (hasOnlyTextParts) {
+                const textContent = contentParts
+                    .filter((p): p is TextPart => p.type === 'text')
+                    .map(p => p.text)
+                    .join('');
+                return { role: 'user', content: textContent };
+            }
+
+            if (contentParts.length === 0) {
+                return { role: 'user', content: '' };
+            }
+
+            return { role: 'user', content: contentParts } as CoreMessage;
         }
 
         // Assistant messages: preserve complete parts structure (including reasoning)

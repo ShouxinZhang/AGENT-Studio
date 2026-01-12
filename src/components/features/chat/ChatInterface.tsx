@@ -27,6 +27,10 @@ export function ChatInterface() {
         handleSubmit,
         onInputKeyDown,
         handleInputChange,
+        attachments,
+        isUploadingAttachments,
+        addFiles,
+        removeAttachment,
         saveEdit,
         stop,
         regenerate,
@@ -98,6 +102,10 @@ export function ChatInterface() {
                 onKeyDown={onInputKeyDown}
                 onSubmit={handleSubmit}
                 onStop={stop}
+                attachments={attachments}
+                isUploadingAttachments={isUploadingAttachments}
+                onAddFiles={addFiles}
+                onRemoveAttachment={removeAttachment}
             />
 
             {/* Assistant edit (second-level page) */}

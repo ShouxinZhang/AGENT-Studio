@@ -15,6 +15,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSettingsStore } from "@/lib/store/useSettingsStore";
 import { useChatStore } from "@/lib/store/useChatStore";
 import { useChatUIStore } from "@/lib/store/useChatUIStore";
+import type { ChatPendingFile } from "../types";
+import { filesToFileUIParts } from "../utils/filesToFileUIParts";
 
 /**
  * 从消息对象中提取纯文本内容
@@ -51,6 +53,12 @@ export function useChatLogic() {
     
     /** 输入框内容 */
     const [input, setInput] = useState("");
+
+    /** 待发送文件（客户端本地，发送时转为 FileUIPart） */
+    const [pendingFiles, setPendingFiles] = useState<ChatPendingFile[]>([]);
+
+    /** 是否正在上传附件 */
+    const [isUploadingAttachments, setIsUploadingAttachments] = useState(false);
     
     // ========== Store 选择器 ==========
     
@@ -111,7 +119,8 @@ export function useChatLogic() {
         event?.preventDefault();
         const trimmedInput = input.trim();
 
-        if (!trimmedInput || isLoading) return;
+        if (isLoading || isUploadingAttachments) return;
+        if (!trimmedInput && pendingFiles.length === 0) return;
 
         // 如果正在编辑，先清除编辑状态
         const { editingId, cancelEditing } = useChatUIStore.getState();
@@ -119,9 +128,34 @@ export function useChatLogic() {
             cancelEditing();
         }
 
-        void sendMessage({ text: trimmedInput });
-        setInput("");
-    }, [input, isLoading, sendMessage]);
+        const files = pendingFiles.map((p) => p.file);
+
+        // Send message with files (multimodal). Conversion to data URLs happens client-side.
+        void (async () => {
+            setIsUploadingAttachments(true);
+            try {
+                const fileParts = await filesToFileUIParts(files);
+                await sendMessage(
+                    fileParts.length > 0
+                        ? { text: trimmedInput || "", files: fileParts }
+                        : { text: trimmedInput }
+                );
+                setInput("");
+                setPendingFiles((prev) => {
+                    for (const p of prev) {
+                        try {
+                            URL.revokeObjectURL(p.previewUrl);
+                        } catch {
+                            // ignore
+                        }
+                    }
+                    return [];
+                });
+            } finally {
+                setIsUploadingAttachments(false);
+            }
+        })();
+    }, [input, isLoading, isUploadingAttachments, pendingFiles, sendMessage]);
 
     /** 输入框键盘事件处理 */
     const onInputKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -134,6 +168,55 @@ export function useChatLogic() {
     /** 输入框内容变化处理 */
     const handleInputChange = useCallback((event: React.ChangeEvent<HTMLTextAreaElement>) => {
         setInput(event.target.value);
+    }, []);
+
+    /** 添加文件（拖拽/选择/粘贴），用于多模态发送 */
+    const addFiles = useCallback(async (files: File[]) => {
+        if (files.length === 0) return;
+        if (isLoading) return;
+
+        setPendingFiles((prev) => {
+            const next = [...prev];
+            for (const file of files) {
+                const exists = next.some(
+                    (p) => p.file.name === file.name && p.file.size === file.size && p.file.type === file.type
+                );
+                if (exists) continue;
+                next.push({
+                    id: crypto.randomUUID(),
+                    file,
+                    previewUrl: URL.createObjectURL(file),
+                });
+            }
+            return next;
+        });
+    }, [isLoading]);
+
+    const removeAttachment = useCallback((id: string) => {
+        setPendingFiles((prev) => {
+            const target = prev.find((p) => p.id === id);
+            if (target) {
+                try {
+                    URL.revokeObjectURL(target.previewUrl);
+                } catch {
+                    // ignore
+                }
+            }
+            return prev.filter((p) => p.id !== id);
+        });
+    }, []);
+
+    const clearAttachments = useCallback(() => {
+        setPendingFiles((prev) => {
+            for (const p of prev) {
+                try {
+                    URL.revokeObjectURL(p.previewUrl);
+                } catch {
+                    // ignore
+                }
+            }
+            return [];
+        });
     }, []);
 
     /**
@@ -200,11 +283,16 @@ export function useChatLogic() {
         status,
         isLoading,
         error,
+        attachments: pendingFiles,
+        isUploadingAttachments,
         
         // Actions
         handleSubmit,
         onInputKeyDown,
         handleInputChange,
+        addFiles,
+        removeAttachment,
+        clearAttachments,
         saveEdit,
         stop: handleStop,
         regenerate: handleRegenerate,
