@@ -3,17 +3,15 @@ import { mcpCall, quoteIdent } from "../_mcp";
 
 export const dynamic = "force-dynamic";
 
-type ObjectDetails = {
-    schema: string;
-    name: string;
-    columns?: Array<{ name: string; type?: string; nullable?: boolean }>;
-};
+type ExecRows = Array<Record<string, unknown>>;
 
-type ExecuteSqlResult = {
-    rows?: Array<Record<string, unknown>>;
-    rowCount?: number;
-    mock?: boolean;
-};
+function asRows(value: unknown): ExecRows {
+    return Array.isArray(value) ? (value as ExecRows) : [];
+}
+
+function escapeSqlString(value: string): string {
+    return value.replace(/'/g, "''");
+}
 
 export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
@@ -31,14 +29,17 @@ export async function GET(req: Request) {
     }
 
     try {
-        // Fetch columns (cheap, helps us render stable column order)
-        const details = await mcpCall<ObjectDetails>("postgres_mcp.get_object_details", { schema, name });
-        const columns = (details.columns ?? []).map((c) => c.name).filter(Boolean);
+        // Fetch columns via information_schema for stable ordering.
+        const columnsRows = await mcpCall<unknown>("postgres_mcp.execute_sql", {
+            sql: `SELECT column_name, data_type, is_nullable FROM information_schema.columns WHERE table_schema = '${escapeSqlString(schema)}' AND table_name = '${escapeSqlString(name)}' ORDER BY ordinal_position;`,
+        });
+        const columns = asRows(columnsRows)
+            .map((r) => (typeof r.column_name === "string" ? r.column_name : ""))
+            .filter(Boolean);
 
         // Generate a safe, read-only query.
         const sql = `SELECT * FROM ${quoteIdent(schema)}.${quoteIdent(name)} LIMIT ${limit} OFFSET ${offset}`;
-        const exec = await mcpCall<ExecuteSqlResult>("postgres_mcp.execute_sql", { sql });
-        const rows = Array.isArray(exec.rows) ? exec.rows : [];
+        const rows = asRows(await mcpCall<unknown>("postgres_mcp.execute_sql", { sql }));
 
         // If MCP returns no column metadata, derive from first row.
         const derivedColumns = columns.length > 0 ? columns : (rows[0] ? Object.keys(rows[0]) : []);
@@ -50,8 +51,8 @@ export async function GET(req: Request) {
             offset,
             columns: derivedColumns,
             rows,
-            rowCount: exec.rowCount ?? rows.length,
-            mock: exec.mock ?? false,
+            rowCount: rows.length,
+            mock: false,
         });
     } catch (err) {
         return NextResponse.json(
