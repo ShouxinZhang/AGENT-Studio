@@ -2,7 +2,7 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 
 // Native Select for Simplicity in MVP
-interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> { }
+type SelectProps = React.SelectHTMLAttributes<HTMLSelectElement>;
 
 const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
     ({ className, children, ...props }, ref) => (

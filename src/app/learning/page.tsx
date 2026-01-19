@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { MessageSquare, BookOpen, GraduationCap, Languages } from "lucide-react";
+import { MessageSquare, GraduationCap, Languages } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 

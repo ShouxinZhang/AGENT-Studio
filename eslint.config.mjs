@@ -19,6 +19,9 @@ const eslintConfig = defineConfig([
     ".venv/**",
     "venv/**",
     "artifacts/**",
+
+    // Reference snippets (not part of shipped app)
+    "docs/reference/**",
   ]),
   {
     rules: {

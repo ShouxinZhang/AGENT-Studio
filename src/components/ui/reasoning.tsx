@@ -9,7 +9,7 @@ import {
 import { cn } from "@/lib/utils";
 import { BrainIcon, ChevronDownIcon } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
-import { createContext, memo, useContext, useEffect, useState } from "react";
+import { createContext, memo, useContext, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
@@ -59,24 +59,30 @@ export const Reasoning = memo(
             defaultProp: defaultOpen,
             onChange: onOpenChange,
         });
-        const [duration, setDuration] = useControllableState({
-            prop: durationProp,
-            defaultProp: undefined,
-        });
 
         const [hasAutoClosed, setHasAutoClosed] = useState(false);
-        const [startTime, setStartTime] = useState<number | null>(null);
+        const startTimeRef = useRef<number | null>(null);
+        const [internalDuration, setInternalDuration] = useState<number | undefined>(undefined);
 
         useEffect(() => {
             if (isStreaming) {
-                if (startTime === null) {
-                    setStartTime(Date.now());
+                if (startTimeRef.current === null) {
+                    startTimeRef.current = Date.now();
                 }
-            } else if (startTime !== null) {
-                setDuration(Math.ceil((Date.now() - startTime) / MS_IN_S));
-                setStartTime(null);
+                // Clear internal duration asynchronously to satisfy hooks lint rules.
+                setTimeout(() => setInternalDuration(undefined), 0);
+                return;
             }
-        }, [isStreaming, startTime, setDuration]);
+
+            if (startTimeRef.current !== null) {
+                const seconds = Math.ceil((Date.now() - startTimeRef.current) / MS_IN_S);
+                startTimeRef.current = null;
+                // Update internal duration asynchronously to avoid cascading renders.
+                setTimeout(() => setInternalDuration(seconds), 0);
+            }
+        }, [isStreaming]);
+
+        const resolvedDuration = durationProp ?? internalDuration;
 
         useEffect(() => {
             if (defaultOpen && !isStreaming && isOpen && !hasAutoClosed) {
@@ -95,7 +101,7 @@ export const Reasoning = memo(
 
         return (
             <ReasoningContext.Provider
-                value={{ isStreaming, isOpen, setIsOpen, duration }}
+                value={{ isStreaming, isOpen, setIsOpen, duration: resolvedDuration }}
             >
                 <Collapsible
                     className={cn("not-prose mb-4", className)}

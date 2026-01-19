@@ -16,8 +16,13 @@ import { useChatUIStore } from "@/lib/store/useChatUIStore";
 import { Virtuoso } from "react-virtuoso";
 import { useRef } from "react";
 import { cn } from "@/lib/utils";
+import type { ToolScope } from "@/lib/store/useSettingsStore";
 
-export function ChatInterface() {
+type Props = {
+    toolScope?: ToolScope;
+};
+
+export function ChatInterface({ toolScope = "chat" }: Props) {
     const {
         input,
         messages,
@@ -34,7 +39,7 @@ export function ChatInterface() {
         saveEdit,
         stop,
         regenerate,
-    } = useChatLogic();
+    } = useChatLogic({ toolScope });
 
     const isStreaming = status === "streaming";
     

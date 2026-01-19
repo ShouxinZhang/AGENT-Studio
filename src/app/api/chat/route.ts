@@ -1,7 +1,81 @@
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
-import { streamText, type UIMessage, type CoreMessage } from 'ai';
+import { stepCountIs, streamText, tool, type CoreMessage, type UIMessage, type ToolSet } from 'ai';
+import { z } from 'zod';
 import { DEFAULT_MODEL_ID } from '@/lib/config/llm';
 import type { FilePart, ImagePart } from '@ai-sdk/provider-utils';
+import { POSTGRES_MCP_TOOLS } from '@/lib/mcp/postgresMcpCatalog';
+
+const MCP_BACKEND_URL = process.env.MCP_BACKEND_URL || 'http://localhost:8090';
+
+function toToolKey(toolId: string): string {
+    // Providers typically require tool names without dots.
+    return toolId.replace(/[^a-zA-Z0-9_-]+/g, '__');
+}
+
+async function mcpCall(toolId: string, args: Record<string, unknown>, abortSignal?: AbortSignal): Promise<unknown> {
+    const res = await fetch(`${MCP_BACKEND_URL}/mcp/call`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ tool: toolId, args }),
+        cache: 'no-store',
+        signal: abortSignal,
+    });
+
+    const text = await res.text();
+    let json: unknown = text;
+    try {
+        json = JSON.parse(text);
+    } catch {
+        // ignore
+    }
+
+    if (!res.ok) {
+        throw new Error(`mcp_call_failed:${res.status}:${typeof json === 'string' ? json : JSON.stringify(json)}`);
+    }
+
+    return json;
+}
+
+function buildEnabledTools(enabledToolIds: unknown) {
+    const ids = Array.isArray(enabledToolIds)
+        ? enabledToolIds.filter((x): x is string => typeof x === 'string' && x.trim().length > 0)
+        : [];
+
+    const catalogById = new Map(POSTGRES_MCP_TOOLS.map((t) => [t.id, t] as const));
+
+    const tools: ToolSet = {};
+    for (const id of ids) {
+        if (!id.startsWith('postgres_mcp.')) continue;
+
+        const def = catalogById.get(id);
+        const key = toToolKey(id);
+
+        tools[key] = tool({
+            description: def
+                ? `MCP tool (${id}): ${def.description}`
+                : `MCP tool (${id})`,
+            // MCP tool schemas are not available here; accept a free-form JSON object.
+            inputSchema: z.record(z.any()).describe('Arguments for the MCP tool as a JSON object.'),
+            execute: async (input: unknown, { abortSignal }) => {
+                if (process.env.CHAT_DEBUG_TOOLS === '1') {
+                    console.log('[chat] tool call ->', id, input);
+                }
+                const args = (input && typeof input === 'object') ? (input as Record<string, unknown>) : {};
+                return mcpCall(id, args, abortSignal);
+            },
+        });
+    }
+
+    return tools;
+}
+
+function trimByTurns(messages: UIMessage[], turns: unknown): UIMessage[] {
+    if (typeof turns !== 'number' || !Number.isFinite(turns) || turns <= 0) return messages;
+    // A turn ~= user + assistant; approximate by keeping last N*2 messages.
+    const maxMessages = Math.max(1, Math.floor(turns) * 2);
+    if (messages.length <= maxMessages) return messages;
+    return messages.slice(-maxMessages);
+}
 
 type ReasoningPart = {
     type: 'reasoning';
@@ -44,7 +118,7 @@ function toDataContentOrUrl(url: string, reqUrl: string): { data?: string; url?:
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
-    const { messages, model, temperature, topP, topK, reasoningEffort, system, openRouterApiKey } = await req.json();
+    const { messages, model, temperature, topP, topK, reasoningEffort, system, openRouterApiKey, enabledToolIds, chatMemoryTurns } = await req.json();
 
     const apiKey = (typeof openRouterApiKey === 'string' && openRouterApiKey.trim())
         ? openRouterApiKey.trim()
@@ -74,7 +148,8 @@ export async function POST(req: Request) {
     // Convert UIMessages to core messages format for the model
     // For assistant messages, preserve reasoning parts to maintain thought context
     // This is crucial for Gemini 3.x models which require thought_signature in multi-turn conversations
-    const coreMessages = (messages as UIMessage[]).map((msg): CoreMessage => {
+    const uiMessages = trimByTurns(messages as UIMessage[], chatMemoryTurns);
+    const coreMessages = uiMessages.map((msg): CoreMessage => {
         if (msg.role === 'user') {
             const contentParts: UserContentPart[] = [];
 
@@ -162,7 +237,14 @@ export async function POST(req: Request) {
         return { role: 'assistant', content: contentParts } as CoreMessage;
     });
 
-    const requestBody: Parameters<typeof streamText>[0] & { topK?: number } = {
+    const enabledTools = buildEnabledTools(enabledToolIds);
+    const hasTools = Object.keys(enabledTools).length > 0;
+
+    const requestBody: Parameters<typeof streamText>[0] & {
+        topK?: number;
+        tools?: ToolSet;
+        stopWhen?: ReturnType<typeof stepCountIs>;
+    } = {
         // Pass model settings (including reasoning config) to the model
         model: openrouter(modelId, modelSettings),
         messages: coreMessages,
@@ -173,6 +255,11 @@ export async function POST(req: Request) {
 
     if (typeof topK === 'number') {
         requestBody.topK = topK;
+    }
+
+    if (hasTools) {
+        requestBody.tools = enabledTools;
+        requestBody.stopWhen = stepCountIs(5);
     }
 
     const result = streamText(requestBody);

@@ -13,6 +13,7 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSettingsStore } from "@/lib/store/useSettingsStore";
+import type { ToolScope } from "@/lib/store/useSettingsStore";
 import { useChatStore } from "@/lib/store/useChatStore";
 import { useChatUIStore } from "@/lib/store/useChatUIStore";
 import type { ChatPendingFile } from "../types";
@@ -30,8 +31,19 @@ export const getMessageText = (message: UIMessage) =>
 /**
  * 构建 API 请求体
  */
-const getChatBody = () => {
-    const { model, temperature, topP, topK, reasoningEffort, openRouterApiKey, systemInstructions, activeSystemInstructionId } = useSettingsStore.getState();
+const getChatBody = (toolScope: ToolScope) => {
+    const {
+        model,
+        temperature,
+        topP,
+        topK,
+        reasoningEffort,
+        chatMemoryTurns,
+        openRouterApiKey,
+        systemInstructions,
+        activeSystemInstructionId,
+        enabledToolIdsByScope,
+    } = useSettingsStore.getState();
     const activeInstruction = systemInstructions.find(si => si.id === activeSystemInstructionId);
 
     return {
@@ -40,15 +52,18 @@ const getChatBody = () => {
         topP,
         topK,
         reasoningEffort,
+        chatMemoryTurns,
         openRouterApiKey,
         system: activeInstruction?.content ?? "",
+        enabledToolIds: enabledToolIdsByScope?.[toolScope] ?? [],
     };
 };
 
 /**
  * 聊天逻辑 Hook
  */
-export function useChatLogic() {
+export function useChatLogic(options?: { toolScope?: ToolScope }) {
+    const toolScope = options?.toolScope ?? "chat";
     // ========== 状态定义 ==========
     
     /** 输入框内容 */
@@ -79,9 +94,9 @@ export function useChatLogic() {
         () =>
             new DefaultChatTransport({
                 api: "/api/chat",
-                body: getChatBody,
+                body: () => getChatBody(toolScope),
             }),
-        []
+        [toolScope]
     );
 
     const { messages, setMessages, sendMessage, stop, regenerate, status, error } = useChat({
