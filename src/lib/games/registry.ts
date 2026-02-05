@@ -247,7 +247,7 @@ export const GAMES: GameConfig[] = [
         borderColor: "border-amber-600",
         shadowColor: "shadow-amber-600/50",
         emoji: "📦",
-        available: false,
+        available: true,
         renderMode: "scene",
     },
 

@@ -31,7 +31,7 @@ export const getMessageText = (message: UIMessage) =>
 /**
  * 构建 API 请求体
  */
-const getChatBody = (toolScope: ToolScope) => {
+const getChatBody = (toolScope: ToolScope, systemPromptAppend?: string) => {
     const {
         model,
         temperature,
@@ -46,6 +46,11 @@ const getChatBody = (toolScope: ToolScope) => {
     } = useSettingsStore.getState();
     const activeInstruction = systemInstructions.find(si => si.id === activeSystemInstructionId);
 
+    const baseSystem = activeInstruction?.content ?? "";
+    const system = systemPromptAppend
+        ? `${baseSystem}\n\n${systemPromptAppend}`.trim()
+        : baseSystem;
+
     return {
         model,
         temperature,
@@ -54,7 +59,7 @@ const getChatBody = (toolScope: ToolScope) => {
         reasoningEffort,
         chatMemoryTurns,
         openRouterApiKey,
-        system: activeInstruction?.content ?? "",
+        system,
         enabledToolIds: enabledToolIdsByScope?.[toolScope] ?? [],
     };
 };
@@ -62,8 +67,9 @@ const getChatBody = (toolScope: ToolScope) => {
 /**
  * 聊天逻辑 Hook
  */
-export function useChatLogic(options?: { toolScope?: ToolScope }) {
+export function useChatLogic(options?: { toolScope?: ToolScope; systemPromptAppend?: string }) {
     const toolScope = options?.toolScope ?? "chat";
+    const systemPromptAppend = options?.systemPromptAppend;
     // ========== 状态定义 ==========
     
     /** 输入框内容 */
@@ -94,9 +100,9 @@ export function useChatLogic(options?: { toolScope?: ToolScope }) {
         () =>
             new DefaultChatTransport({
                 api: "/api/chat",
-                body: () => getChatBody(toolScope),
+                body: () => getChatBody(toolScope, systemPromptAppend),
             }),
-        [toolScope]
+        [toolScope, systemPromptAppend]
     );
 
     const { messages, setMessages, sendMessage, stop, regenerate, status, error } = useChat({
@@ -311,5 +317,7 @@ export function useChatLogic(options?: { toolScope?: ToolScope }) {
         saveEdit,
         stop: handleStop,
         regenerate: handleRegenerate,
+        sendMessage,
+        setMessages,
     };
 }
