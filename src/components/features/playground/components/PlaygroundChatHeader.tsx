@@ -1,10 +1,10 @@
 "use client";
 
-import { MessageSquare, History, Wrench, Plus, ChevronLeft } from "lucide-react";
+import { MessageSquare, History, Wrench, Plus, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-export type SidebarView = "chat" | "history" | "tools";
+export type SidebarView = "chat" | "history" | "tools" | "trace";
 
 interface Props {
     currentView: SidebarView;
@@ -53,6 +53,18 @@ export function PlaygroundChatHeader({ currentView, onViewChange, onNewChat }: P
                     title="Tools"
                 >
                     <Wrench size={16} />
+                </Button>
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onViewChange("trace")}
+                    className={cn(
+                        "h-8 w-8 transition-all",
+                        currentView === "trace" ? "text-primary bg-primary/10" : "text-muted-foreground"
+                    )}
+                    title="LLM Trace"
+                >
+                    <Brain size={16} />
                 </Button>
             </div>
 

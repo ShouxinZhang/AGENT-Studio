@@ -9,6 +9,7 @@ import { callGameTool, getGameToolSpecs } from "./mcp/gameMcpTools";
 import { PlaygroundChatHeader, type SidebarView } from "./components/PlaygroundChatHeader";
 import { PlaygroundHistoryList } from "./components/PlaygroundHistoryList";
 import { PlaygroundToolsView } from "./components/PlaygroundToolsView";
+import { PlaygroundTraceView } from "./components/PlaygroundTraceView";
 import { useChatStore } from "@/lib/store/useChatStore";
 
 type Props = {
@@ -199,7 +200,13 @@ export function PlaygroundChatInterface({ gameId, apiRef }: Props) {
 
                 {view === "tools" && (
                     <div className="flex-1 flex flex-col min-h-0">
-                        <PlaygroundToolsView />
+                        <PlaygroundToolsView gameId={gameId} />
+                    </div>
+                )}
+
+                {view === "trace" && (
+                    <div className="flex-1 flex flex-col min-h-0">
+                        <PlaygroundTraceView gameId={gameId} messages={messages} />
                     </div>
                 )}
             </div>
