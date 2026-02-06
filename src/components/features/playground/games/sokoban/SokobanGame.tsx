@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useReducer, useRef } from "react";
 import type { GameApi } from "../types";
 import { cn } from "@/lib/utils";
+import { useElementSize } from "../shared/useElementSize";
 
 type Pos = { x: number; y: number };
 type Dir = "up" | "down" | "left" | "right";
@@ -114,11 +115,10 @@ function reduceSokoban(state: SokobanState, action: SokobanAction): SokobanState
     };
 }
 
-function drawSokoban(canvas: HTMLCanvasElement, state: SokobanState) {
+function drawSokoban(canvas: HTMLCanvasElement, state: SokobanState, cell: number) {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     const dpr = window.devicePixelRatio || 1;
-    const cell = 26;
     const w = state.w * cell;
     const h = state.h * cell;
     canvas.width = Math.floor(w * dpr);
@@ -177,6 +177,14 @@ type Props = {
 export function SokobanGame({ apiRef }: Props) {
     const [state, dispatch] = useReducer(reduceSokoban, undefined, initSokobanState);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const viewportRef = useRef<HTMLDivElement | null>(null);
+    const viewport = useElementSize(viewportRef);
+
+    const cell = useMemo(() => {
+        const availW = Math.max(260, viewport.width - 24);
+        const availH = Math.max(220, viewport.height - 24);
+        return Math.max(14, Math.floor(Math.min(availW / state.w, availH / state.h)));
+    }, [state.h, state.w, viewport.height, viewport.width]);
 
     const api = useMemo<GameApi>(() => ({
         gameId: "Sokoban",
@@ -206,8 +214,8 @@ export function SokobanGame({ apiRef }: Props) {
     useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
-        drawSokoban(canvas, state);
-    }, [state]);
+        drawSokoban(canvas, state, cell);
+    }, [cell, state]);
 
     useEffect(() => {
         const onKeyDown = (e: KeyboardEvent) => {
@@ -223,15 +231,20 @@ export function SokobanGame({ apiRef }: Props) {
     }, []);
 
     return (
-        <div className="flex flex-col items-center gap-3">
-            <div className="w-full flex items-center justify-between">
+        <div className="flex h-full w-full flex-col gap-3">
+            <div className="shrink-0 w-full flex items-center justify-between">
                 <div className="text-sm font-medium text-foreground">Sokoban</div>
                 <div className="text-xs text-muted-foreground">Moves: {state.moves}{state.won ? " · Solved" : ""}</div>
             </div>
-            <div className={cn("rounded-lg border border-border bg-card p-2", state.won && "opacity-95")}>
-                <canvas ref={canvasRef} className="block" />
+            <div ref={viewportRef} className="flex-1 min-h-0 flex items-center justify-center">
+                <div
+                    className={cn("rounded-lg border border-border bg-card p-2", state.won && "opacity-95")}
+                    style={{ width: `${state.w * cell + 16}px`, height: `${state.h * cell + 16}px` }}
+                >
+                    <canvas ref={canvasRef} className="block" />
+                </div>
             </div>
-            <div className="text-xs text-muted-foreground">Keyboard: Arrow keys / WASD · Reset: R</div>
+            <div className="shrink-0 text-xs text-muted-foreground">Keyboard: Arrow keys / WASD · Reset: R</div>
         </div>
     );
 }

@@ -46,14 +46,14 @@ export function PlaygroundView({ gameId, title }: Props) {
             </header>
 
             <div className="flex-1 flex overflow-hidden">
-                <main className="flex-1 min-w-0 overflow-auto p-4 flex items-center justify-center h-full bg-neutral-900/50">
-                    <div className="w-full h-full flex items-center justify-center">{gameView}</div>
+                <main className="flex-1 min-w-0 min-h-0 p-2 md:p-4 bg-neutral-900/50">
+                    <div className="w-full h-full">{gameView}</div>
                 </main>
 
                 <aside
                     className={cn(
-                        "w-[420px] border-l border-border bg-card flex flex-col overflow-hidden",
-                        "min-w-[360px]"
+                        "w-[clamp(300px,26vw,420px)] border-l border-border bg-card flex flex-col overflow-hidden",
+                        "min-w-[280px]"
                     )}
                 >
                     <div className="flex-1 min-h-0">
