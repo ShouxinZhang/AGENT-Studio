@@ -10,10 +10,11 @@ interface Props {
     currentView: SidebarView;
     onViewChange: (view: SidebarView) => void;
     onNewChat: () => void;
+    onRunMatch: () => void;
     gameTitle?: string;
 }
 
-export function PlaygroundChatHeader({ currentView, onViewChange, onNewChat }: Props) {
+export function PlaygroundChatHeader({ currentView, onViewChange, onNewChat, onRunMatch }: Props) {
     return (
         <header className="h-12 border-b border-border flex items-center px-2 bg-card/80 backdrop-blur-md z-20 shrink-0">
             {/* View Switchers */}
@@ -72,6 +73,14 @@ export function PlaygroundChatHeader({ currentView, onViewChange, onNewChat }: P
 
             {/* Actions */}
             <div className="flex items-center gap-1">
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={onRunMatch}
+                    className="h-8 px-2 text-xs gap-1.5 text-muted-foreground hover:text-foreground hover:bg-neutral-800"
+                >
+                    <span>Run</span>
+                </Button>
                 <Button
                     variant="ghost"
                     size="sm"

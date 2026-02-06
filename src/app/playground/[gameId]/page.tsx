@@ -11,12 +11,26 @@ function normalizeGameId(raw: string): GameId | null {
     return match ?? null;
 }
 
-export default async function GamePlaygroundPage({ params }: { params: Promise<{ gameId: string }> }) {
+type PageProps = {
+    params: Promise<{ gameId: string }>;
+    searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
+
+function normalizeAutoRunFlag(raw: string | string[] | undefined): boolean {
+    const value = Array.isArray(raw) ? raw[0] : raw;
+    if (!value) return false;
+    const v = value.toLowerCase();
+    return v === "1" || v === "true" || v === "yes" || v === "on";
+}
+
+export default async function GamePlaygroundPage({ params, searchParams }: PageProps) {
     const { gameId: gameIdParam } = await params;
+    const qs = searchParams ? await searchParams : {};
     const raw = decodeURIComponent(gameIdParam);
     const gameId = normalizeGameId(raw);
     if (!gameId) notFound();
 
+    const autoRun = normalizeAutoRunFlag(qs.autorun ?? qs.autoRun);
     const cfg = getGameById(gameId);
-    return <PlaygroundView gameId={gameId} title={cfg?.name ?? gameId} />;
+    return <PlaygroundView gameId={gameId} title={cfg?.name ?? gameId} autoRun={autoRun} />;
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Virtuoso } from "react-virtuoso";
 import { cn } from "@/lib/utils";
 import { useChatLogic, getMessageText } from "@/components/features/chat";
@@ -15,6 +15,7 @@ import { useChatStore } from "@/lib/store/useChatStore";
 type Props = {
     gameId: GameId;
     apiRef: React.MutableRefObject<GameApi | null>;
+    autoRun?: boolean;
 };
 
 function buildPlaygroundSystemPrompt(gameId: GameId) {
@@ -39,8 +40,8 @@ function buildPlaygroundSystemPrompt(gameId: GameId) {
     ].join("\n");
 }
 
-export function PlaygroundChatInterface({ gameId, apiRef }: Props) {
-    const [view, setView] = useState<SidebarView>("chat");
+export function PlaygroundChatInterface({ gameId, apiRef, autoRun = false }: Props) {
+    const [view, setView] = useState<SidebarView>(() => (autoRun ? "trace" : "chat"));
     const createConversation = useChatStore((s) => s.createConversation);
     const systemPromptAppend = useMemo(() => buildPlaygroundSystemPrompt(gameId), [gameId]);
 
@@ -64,6 +65,7 @@ export function PlaygroundChatInterface({ gameId, apiRef }: Props) {
 
     const isStreaming = status === "streaming";
     const handledRef = useRef<Set<string>>(new Set());
+    const autoRunTriggeredRef = useRef(false);
 
     // Switch view back to chat when chat streaming/submission starts.
     useEffect(() => {
@@ -122,12 +124,35 @@ export function PlaygroundChatInterface({ gameId, apiRef }: Props) {
         setView("chat");
     };
 
+    const sendRunKickoff = useCallback(async () => {
+        if (isLoading) return;
+        const kickoff =
+            gameId === "Tetris"
+                ? "开始在线对局。只用 MCP 工具并优先使用 tetris.auto_step({\"repeat\":3})，持续拿分。"
+                : "开始在线对局。只用 MCP 工具并持续操作游戏。";
+        await sendMessage({ text: kickoff });
+    }, [gameId, isLoading, sendMessage]);
+
+    const handleRunMatch = useCallback(() => {
+        setView("trace");
+        void sendRunKickoff();
+    }, [sendRunKickoff]);
+
+    useEffect(() => {
+        if (!autoRun) return;
+        if (autoRunTriggeredRef.current) return;
+        if (isLoading) return;
+        autoRunTriggeredRef.current = true;
+        void sendRunKickoff();
+    }, [autoRun, isLoading, sendRunKickoff]);
+
     return (
         <div className="flex flex-col h-full relative bg-background overflow-hidden">
             <PlaygroundChatHeader
                 currentView={view}
                 onViewChange={setView}
                 onNewChat={handleNewChat}
+                onRunMatch={handleRunMatch}
             />
 
             <div className="flex-1 min-h-0 relative flex flex-col">

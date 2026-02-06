@@ -12,9 +12,10 @@ import { PlaygroundChatInterface } from "./PlaygroundChatInterface";
 type Props = {
     gameId: GameId;
     title?: string;
+    autoRun?: boolean;
 };
 
-export function PlaygroundView({ gameId, title }: Props) {
+export function PlaygroundView({ gameId, title, autoRun = false }: Props) {
     const apiRef = useRef<GameApi | null>(null);
 
     const gameView = useMemo(() => {
@@ -57,7 +58,7 @@ export function PlaygroundView({ gameId, title }: Props) {
                     )}
                 >
                     <div className="flex-1 min-h-0">
-                        <PlaygroundChatInterface gameId={gameId} apiRef={apiRef} />
+                        <PlaygroundChatInterface gameId={gameId} apiRef={apiRef} autoRun={autoRun} />
                     </div>
                 </aside>
             </div>
