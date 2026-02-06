@@ -1,17 +1,22 @@
 "use client";
 
 import * as React from "react";
-import { Wrench, Check, Search } from "lucide-react";
+import { Check, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { useSettingsStore } from "@/lib/store/useSettingsStore";
 import { POSTGRES_MCP_TOOLS } from "@/lib/mcp/postgresMcpCatalog";
 import { cn } from "@/lib/utils";
+import { usePlaygroundSettingsStore } from "@/lib/store/usePlaygroundSettingsStore";
+import { AVAILABLE_MODELS } from "@/lib/config/llm";
 
 const EMPTY_TOOL_IDS: string[] = [];
 
 export function PlaygroundToolsView() {
     const scope = "playground";
+    const model = usePlaygroundSettingsStore((s) => s.model);
+    const setModel = usePlaygroundSettingsStore((s) => s.setModel);
     const enabledToolIds = useSettingsStore((s) => s.enabledToolIdsByScope?.[scope] ?? EMPTY_TOOL_IDS);
     const toggleToolIdForScope = useSettingsStore((s) => s.toggleToolIdForScope);
     const setEnabledToolIdsForScope = useSettingsStore((s) => s.setEnabledToolIdsForScope);
@@ -69,6 +74,22 @@ export function PlaygroundToolsView() {
                         placeholder="Search workspace tools..."
                         className="h-9 pl-8 bg-neutral-900/50 border-neutral-800 text-sm focus-visible:ring-primary/30"
                     />
+                </div>
+                <div className="space-y-1">
+                    <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                        Agent Model
+                    </div>
+                    <Select
+                        value={model}
+                        onChange={(e) => setModel(e.target.value)}
+                        className="h-9 bg-neutral-900/50 border-neutral-800 text-sm"
+                    >
+                        {AVAILABLE_MODELS.map((m) => (
+                            <option key={m.id} value={m.id}>
+                                {m.name}
+                            </option>
+                        ))}
+                    </Select>
                 </div>
             </div>
 

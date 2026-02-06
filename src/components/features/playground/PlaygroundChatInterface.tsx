@@ -5,6 +5,7 @@ import { useChatLogic, getMessageText } from "@/components/features/chat";
 import { MessageBubble, ChatInput, EmptyState, LoadingIndicator, ErrorDisplay } from "@/components/features/chat";
 import type { GameApi, GameId } from "./games/types";
 import { extractLatestMcpToolRequest } from "./mcp/extractMcpRequest";
+import { callGameTool, getGameToolSpecs } from "./mcp/gameMcpTools";
 import { PlaygroundChatHeader, type SidebarView } from "./components/PlaygroundChatHeader";
 import { PlaygroundHistoryList } from "./components/PlaygroundHistoryList";
 import { PlaygroundToolsView } from "./components/PlaygroundToolsView";
@@ -16,36 +17,25 @@ type Props = {
 };
 
 function buildPlaygroundSystemPrompt(gameId: GameId) {
+    const toolSpecs = getGameToolSpecs(gameId)
+        .map((spec) => `- ${spec.tool} (args: ${JSON.stringify(spec.argsExample)}) -> ${spec.description}`)
+        .join("\n");
+
     return [
         `You are an agent playing the game ${gameId}.`,
+        "Goal priority: react fast and maximize score.",
         "All game state and actions are available via local MCP-style tools.",
         "When you need game data or want to act, emit EXACTLY ONE tool request as a fenced code block:",
         "```mcp\n{\"tool\":\"game.get_state\",\"args\":{}}\n```",
         "Available tools:",
-        "- game.get_state  (args: {}) -> returns current game state JSON",
-        "- game.get_actions (args: {}) -> returns allowed actions",
-        "- game.step (args: {action: string}) -> applies one step and returns next state",
-        "- game.reset (args: {}) -> resets game and returns state",
+        toolSpecs,
+        "For Tetris, always optimize for score/lines and avoid long explanations.",
+        "For Tetris, preferred fast loop: tetris.auto_step({\"repeat\":3}) until game over.",
+        "Fallback loop: tetris.suggest_action -> tetris.step(action).",
+        "Respond with tool calls only while playing.",
         "After emitting a tool request, WAIT for the tool result before continuing.",
         "Tool results will be sent back as a user message starting with [MCP_RESULT].",
     ].join("\n");
-}
-
-async function callGameTool(req: { tool: string; args?: Record<string, unknown> }, api: GameApi) {
-    const tool = req.tool;
-    const args = req.args ?? {};
-    if (tool === "game.get_state") return api.getState();
-    if (tool === "game.get_actions") return api.getActions();
-    if (tool === "game.reset") {
-        api.reset();
-        return api.getState();
-    }
-    if (tool === "game.step") {
-        const action = typeof args.action === "string" ? args.action : "none";
-        api.step(action);
-        return api.getState();
-    }
-    throw new Error(`unknown_tool:${tool}`);
 }
 
 export function PlaygroundChatInterface({ gameId, apiRef }: Props) {

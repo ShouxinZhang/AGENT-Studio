@@ -13,11 +13,13 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSettingsStore } from "@/lib/store/useSettingsStore";
+import { usePlaygroundSettingsStore } from "@/lib/store/usePlaygroundSettingsStore";
 import type { ToolScope } from "@/lib/store/useSettingsStore";
 import { useChatStore } from "@/lib/store/useChatStore";
 import { useChatUIStore } from "@/lib/store/useChatUIStore";
 import type { ChatPendingFile } from "../types";
 import { filesToFileUIParts } from "../utils/filesToFileUIParts";
+import { DEFAULT_MODEL_ID } from "@/lib/config/llm";
 
 /**
  * 从消息对象中提取纯文本内容
@@ -44,7 +46,14 @@ const getChatBody = (toolScope: ToolScope, systemPromptAppend?: string) => {
         activeSystemInstructionId,
         enabledToolIdsByScope,
     } = useSettingsStore.getState();
+    const playgroundSettings = toolScope === "playground" ? usePlaygroundSettingsStore.getState() : null;
     const activeInstruction = systemInstructions.find(si => si.id === activeSystemInstructionId);
+    const effectiveModel =
+        toolScope === "playground"
+            ? (playgroundSettings?.model?.trim() || DEFAULT_MODEL_ID)
+            : model;
+    const effectiveReasoningEffort = toolScope === "playground" ? "none" : reasoningEffort;
+    const effectiveTemperature = toolScope === "playground" ? Math.min(temperature, 0.4) : temperature;
 
     const baseSystem = activeInstruction?.content ?? "";
     const system = systemPromptAppend
@@ -52,11 +61,11 @@ const getChatBody = (toolScope: ToolScope, systemPromptAppend?: string) => {
         : baseSystem;
 
     return {
-        model,
-        temperature,
+        model: effectiveModel,
+        temperature: effectiveTemperature,
         topP,
         topK,
-        reasoningEffort,
+        reasoningEffort: effectiveReasoningEffort,
         chatMemoryTurns,
         openRouterApiKey,
         system,
