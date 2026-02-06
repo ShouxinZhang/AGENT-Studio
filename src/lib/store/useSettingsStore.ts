@@ -4,7 +4,7 @@ import { DEFAULT_MODEL_ID } from '@/lib/config/llm';
 
 export type ReasoningEffort = 'xhigh' | 'high' | 'medium' | 'low' | 'minimal' | 'none';
 
-export type ToolScope = "chat" | "sql";
+export type ToolScope = "chat" | "sql" | "playground";
 
 type EnabledToolIdsByScope = Record<ToolScope, string[]>;
 
@@ -68,7 +68,7 @@ export const useSettingsStore = create<SettingsState>()(
             openRouterApiKey: '',
             systemInstructions: DEFAULT_INSTRUCTIONS,
             activeSystemInstructionId: 'default-1',
-            enabledToolIdsByScope: { chat: [], sql: [] },
+            enabledToolIdsByScope: { chat: [], sql: [], playground: [] },
             setModel: (model) => set({ model }),
             setTemperature: (temperature) => set({ temperature }),
             setTopP: (topP) => set({ topP }),
@@ -162,7 +162,8 @@ export const useSettingsStore = create<SettingsState>()(
                     const obj = (v && typeof v === 'object') ? (v as Record<string, unknown>) : {};
                     const chat = Array.isArray(obj.chat) ? obj.chat.filter((x) => typeof x === 'string') : [];
                     const sql = Array.isArray(obj.sql) ? obj.sql.filter((x) => typeof x === 'string') : [];
-                    return { chat, sql } as EnabledToolIdsByScope;
+                    const playground = Array.isArray(obj.playground) ? obj.playground.filter((x) => typeof x === 'string') : [];
+                    return { chat, sql, playground } as EnabledToolIdsByScope;
                 })();
 
                 return {

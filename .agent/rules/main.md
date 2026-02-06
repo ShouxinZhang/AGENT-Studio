@@ -1,3 +1,7 @@
+---
+trigger: always_on
+---
+
 # Repo Agent Instructions
 
 First of all, 用户使用中文，请用中文书写文档

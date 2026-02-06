@@ -51,11 +51,11 @@ export const MessageBubble = memo(function MessageBubble({
 }: MessageBubbleProps) {
     const messageText = getMessageText(message);
     const isUser = message.role === "user";
-    
+
     // Selectors: 只订阅当前消息相关的状态
     const isEditing = useChatUIStore((s) => s.editingId === message.id);
     const editingRole = useChatUIStore((s) => s.editingRole);
-    
+
     // 助手消息编辑状态判断
     const isAssistantEditingThis = isEditing && editingRole === "assistant";
 
@@ -125,6 +125,8 @@ export const MessageBubble = memo(function MessageBubble({
     );
 });
 
+import { ToolResult } from "./ToolResult";
+
 /**
  * 用户消息内容组件
  */
@@ -138,6 +140,25 @@ function UserMessageContent({
     onSaveEdit: () => void;
 }) {
     if (!isEditing) {
+        // Check for MCP Result pattern
+        if (messageText.startsWith("[MCP_RESULT]")) {
+            // Try to extract the JSON part if easy, otherwise just show full text
+            // The format in PlaygroundChatInterface is: [MCP_RESULT]\n\n\`\`\`json\n...\n\`\`\`
+            // or simply text starting with [MCP_RESULT].
+            // We can just strip the prefix for display or just pass it all.
+            // To be cleaner, let's try to strip the markdown code block wrapper if present
+
+            let content = messageText.replace("[MCP_RESULT]", "").trim();
+            // Remove markdown code fence if it wraps the whole content
+            const codeBlockRegex = /^```json\n([\s\S]*)\n```$/;
+            const match = content.match(codeBlockRegex);
+            if (match) {
+                content = match[1];
+            }
+
+            return <ToolResult content={content} />;
+        }
+
         return <div className="whitespace-pre-wrap">{messageText}</div>;
     }
 

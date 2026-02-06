@@ -1,12 +1,14 @@
-"use client";
-
-import { useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Virtuoso } from "react-virtuoso";
 import { cn } from "@/lib/utils";
 import { useChatLogic, getMessageText } from "@/components/features/chat";
 import { MessageBubble, ChatInput, EmptyState, LoadingIndicator, ErrorDisplay } from "@/components/features/chat";
 import type { GameApi, GameId } from "./games/types";
 import { extractLatestMcpToolRequest } from "./mcp/extractMcpRequest";
+import { PlaygroundChatHeader, type SidebarView } from "./components/PlaygroundChatHeader";
+import { PlaygroundHistoryList } from "./components/PlaygroundHistoryList";
+import { PlaygroundToolsView } from "./components/PlaygroundToolsView";
+import { useChatStore } from "@/lib/store/useChatStore";
 
 type Props = {
     gameId: GameId;
@@ -47,6 +49,8 @@ async function callGameTool(req: { tool: string; args?: Record<string, unknown> 
 }
 
 export function PlaygroundChatInterface({ gameId, apiRef }: Props) {
+    const [view, setView] = useState<SidebarView>("chat");
+    const createConversation = useChatStore((s) => s.createConversation);
     const systemPromptAppend = useMemo(() => buildPlaygroundSystemPrompt(gameId), [gameId]);
 
     const {
@@ -65,10 +69,18 @@ export function PlaygroundChatInterface({ gameId, apiRef }: Props) {
         regenerate,
         stop,
         sendMessage,
-    } = useChatLogic({ toolScope: "chat", systemPromptAppend });
+    } = useChatLogic({ toolScope: "playground", systemPromptAppend });
 
     const isStreaming = status === "streaming";
     const handledRef = useRef<Set<string>>(new Set());
+
+    // Switch view back to chat when chat streaming/submission starts.
+    useEffect(() => {
+        if (messages.length > 0 && view !== "chat" && (status === "streaming" || status === "submitted")) {
+            const timer = setTimeout(() => setView("chat"), 0);
+            return () => clearTimeout(timer);
+        }
+    }, [messages.length, status, view]);
 
     useEffect(() => {
         if (isStreaming) return;
@@ -114,59 +126,93 @@ export function PlaygroundChatInterface({ gameId, apiRef }: Props) {
         })();
     }, [apiRef, isLoading, isStreaming, messages, sendMessage]);
 
+    const handleNewChat = () => {
+        createConversation();
+        setView("chat");
+    };
+
     return (
-        <div className="flex flex-col h-full relative bg-background">
-            <div className="flex-1 min-h-0">
-                {messages.length === 0 ? (
-                    <div className="h-full overflow-y-auto p-4">
-                        <EmptyState />
-                    </div>
-                ) : (
-                    <Virtuoso
-                        data={messages}
-                        initialTopMostItemIndex={messages.length - 1}
-                        followOutput={(isAtBottom) => {
-                            if (isStreaming) return "smooth";
-                            return isAtBottom ? "smooth" : false;
-                        }}
-                        className="h-full"
-                        itemContent={(index, m) => (
-                            <div className={cn("p-4", index === 0 && "pt-6")}>
-                                <MessageBubble
-                                    message={m}
-                                    isLastMessage={index === messages.length - 1}
-                                    isStreaming={isStreaming}
-                                    isLoading={isLoading}
-                                    onSaveEdit={async () => { /* editing not used here */ }}
-                                    onRegenerate={regenerate}
-                                />
-                            </div>
-                        )}
-                        components={{
-                            Footer: () => (
-                                <div className="p-4 pt-0 space-y-4">
-                                    {isLoading && <LoadingIndicator />}
-                                    {error && <ErrorDisplay error={error} onRetry={regenerate} />}
-                                    <div className="h-4" />
+        <div className="flex flex-col h-full relative bg-background overflow-hidden">
+            <PlaygroundChatHeader
+                currentView={view}
+                onViewChange={setView}
+                onNewChat={handleNewChat}
+            />
+
+            <div className="flex-1 min-h-0 relative flex flex-col">
+                {view === "chat" && (
+                    <>
+                        <div className="flex-1 min-h-0">
+                            {messages.length === 0 ? (
+                                <div className="h-full overflow-y-auto p-4 flex flex-col items-center justify-center opacity-50 space-y-4">
+                                    <EmptyState />
+                                    <p className="text-xs max-w-[200px] text-center">
+                                        Ask me to play the game or get the current state!
+                                    </p>
                                 </div>
-                            ),
-                        }}
-                    />
+                            ) : (
+                                <Virtuoso
+                                    data={messages}
+                                    initialTopMostItemIndex={messages.length - 1}
+                                    followOutput={(isAtBottom) => {
+                                        if (isStreaming) return "smooth";
+                                        return isAtBottom ? "smooth" : false;
+                                    }}
+                                    className="h-full"
+                                    itemContent={(index, m) => (
+                                        <div className={cn("px-4 py-2", index === 0 && "pt-6")}>
+                                            <MessageBubble
+                                                message={m}
+                                                isLastMessage={index === messages.length - 1}
+                                                isStreaming={isStreaming}
+                                                isLoading={isLoading}
+                                                onSaveEdit={async () => { /* editing not used here */ }}
+                                                onRegenerate={regenerate}
+                                            />
+                                        </div>
+                                    )}
+                                    components={{
+                                        Footer: () => (
+                                            <div className="p-4 pt-0 space-y-4">
+                                                {isLoading && <LoadingIndicator />}
+                                                {error && <ErrorDisplay error={error} onRetry={regenerate} />}
+                                                <div className="h-4" />
+                                            </div>
+                                        ),
+                                    }}
+                                />
+                            )}
+                        </div>
+
+                        <div className="shrink-0">
+                            <ChatInput
+                                input={input}
+                                isLoading={isLoading}
+                                onInputChange={handleInputChange}
+                                onKeyDown={onInputKeyDown}
+                                onSubmit={handleSubmit}
+                                onStop={stop}
+                                attachments={attachments}
+                                isUploadingAttachments={isUploadingAttachments}
+                                onAddFiles={addFiles}
+                                onRemoveAttachment={removeAttachment}
+                            />
+                        </div>
+                    </>
+                )}
+
+                {view === "history" && (
+                    <div className="flex-1 flex flex-col min-h-0">
+                        <PlaygroundHistoryList />
+                    </div>
+                )}
+
+                {view === "tools" && (
+                    <div className="flex-1 flex flex-col min-h-0">
+                        <PlaygroundToolsView />
+                    </div>
                 )}
             </div>
-
-            <ChatInput
-                input={input}
-                isLoading={isLoading}
-                onInputChange={handleInputChange}
-                onKeyDown={onInputKeyDown}
-                onSubmit={handleSubmit}
-                onStop={stop}
-                attachments={attachments}
-                isUploadingAttachments={isUploadingAttachments}
-                onAddFiles={addFiles}
-                onRemoveAttachment={removeAttachment}
-            />
         </div>
     );
 }

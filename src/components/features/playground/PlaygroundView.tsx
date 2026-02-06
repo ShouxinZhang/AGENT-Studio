@@ -46,8 +46,8 @@ export function PlaygroundView({ gameId, title }: Props) {
             </header>
 
             <div className="flex-1 flex overflow-hidden">
-                <main className="flex-1 min-w-0 overflow-auto p-4">
-                    <div className="max-w-4xl mx-auto">{gameView}</div>
+                <main className="flex-1 min-w-0 overflow-auto p-4 flex items-center justify-center h-full bg-neutral-900/50">
+                    <div className="w-full h-full flex items-center justify-center">{gameView}</div>
                 </main>
 
                 <aside
@@ -56,9 +56,6 @@ export function PlaygroundView({ gameId, title }: Props) {
                         "min-w-[360px]"
                     )}
                 >
-                    <div className="h-10 border-b border-border flex items-center px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                        Agent Chat
-                    </div>
                     <div className="flex-1 min-h-0">
                         <PlaygroundChatInterface gameId={gameId} apiRef={apiRef} />
                     </div>
