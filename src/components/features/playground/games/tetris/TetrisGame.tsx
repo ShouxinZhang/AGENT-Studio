@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useReducer, useRef } from "react";
+import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import type { GameApi } from "../types";
 import { cn } from "@/lib/utils";
 import { useElementSize } from "../shared/useElementSize";
+import { Button } from "@/components/ui/button";
 
 type Cell = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
@@ -442,6 +443,7 @@ type Props = {
 
 export function TetrisGame({ apiRef }: Props) {
     const [state, dispatch] = useReducer(reduceTetris, undefined, initTetrisState);
+    const [started, setStarted] = useState(false);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const viewportRef = useRef<HTMLDivElement | null>(null);
     const viewport = useElementSize(viewportRef);
@@ -454,7 +456,10 @@ export function TetrisGame({ apiRef }: Props) {
 
     const api = useMemo<GameApi>(() => ({
         gameId: "Tetris",
-        reset: () => dispatch({ type: "reset" }),
+        reset: () => {
+            dispatch({ type: "reset" });
+            setStarted(true);
+        },
         getState: () => ({
             game: "Tetris",
             w: state.w,
@@ -476,8 +481,11 @@ export function TetrisGame({ apiRef }: Props) {
             "hard_drop",
             "none",
         ],
-        step: (action) => dispatch({ type: "step", action }),
-    }), [state]);
+        step: (action) => {
+            if (!started) setStarted(true);
+            dispatch({ type: "step", action });
+        },
+    }), [started, state]);
 
     useEffect(() => {
         apiRef.current = api;
@@ -493,7 +501,16 @@ export function TetrisGame({ apiRef }: Props) {
     }, [cell, state]);
 
     useEffect(() => {
+        if (!started || state.gameOver) return;
+        const timer = window.setInterval(() => {
+            dispatch({ type: "step", action: "none" });
+        }, 650);
+        return () => window.clearInterval(timer);
+    }, [started, state.gameOver]);
+
+    useEffect(() => {
         const onKeyDown = (e: KeyboardEvent) => {
+            if (!started) return;
             const key = e.key.toLowerCase();
             if (key === "arrowleft") dispatch({ type: "step", action: "left" });
             else if (key === "arrowright") dispatch({ type: "step", action: "right" });
@@ -505,7 +522,10 @@ export function TetrisGame({ apiRef }: Props) {
         };
         window.addEventListener("keydown", onKeyDown);
         return () => window.removeEventListener("keydown", onKeyDown);
-    }, []);
+    }, [started]);
+
+    const showStartOverlay = !started || state.gameOver;
+    const startLabel = started ? "重新开始" : "开始游戏";
 
     return (
         <div className="flex h-full w-full flex-col gap-3">
@@ -515,10 +535,22 @@ export function TetrisGame({ apiRef }: Props) {
             </div>
             <div ref={viewportRef} className="flex-1 min-h-0 flex items-center justify-center">
                 <div
-                    className={cn("rounded-lg border border-border bg-card p-2", state.gameOver && "opacity-95")}
+                    className={cn("relative rounded-lg border border-border bg-card p-2", state.gameOver && "opacity-95")}
                     style={{ width: `${state.w * cell + 16}px`, height: `${state.h * cell + 16}px` }}
                 >
                     <canvas ref={canvasRef} className="block" />
+                    {showStartOverlay && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/35">
+                            <Button
+                                onClick={() => {
+                                    dispatch({ type: "reset" });
+                                    setStarted(true);
+                                }}
+                            >
+                                {startLabel}
+                            </Button>
+                        </div>
+                    )}
                 </div>
             </div>
             <div className="shrink-0 text-xs text-muted-foreground">Keyboard: ← → ↑ Z ↓ Space · Reset: R</div>
