@@ -8,9 +8,11 @@ import { useSettingsStore } from "@/lib/store/useSettingsStore";
 import { POSTGRES_MCP_TOOLS } from "@/lib/mcp/postgresMcpCatalog";
 import { cn } from "@/lib/utils";
 
+const EMPTY_TOOL_IDS: string[] = [];
+
 export function PlaygroundToolsView() {
     const scope = "playground";
-    const enabledToolIds = useSettingsStore((s) => s.enabledToolIdsByScope?.[scope] ?? []);
+    const enabledToolIds = useSettingsStore((s) => s.enabledToolIdsByScope?.[scope] ?? EMPTY_TOOL_IDS);
     const toggleToolIdForScope = useSettingsStore((s) => s.toggleToolIdForScope);
     const setEnabledToolIdsForScope = useSettingsStore((s) => s.setEnabledToolIdsForScope);
 

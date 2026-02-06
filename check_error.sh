@@ -128,6 +128,26 @@ dev_smoke_check() {
     return 0
 }
 
+store_selector_stability_check() {
+    local list_file
+    list_file="$(mktemp)"
+
+    rg -n "use[A-Za-z0-9_]*Store\\(\\(.*\\) => .*\\?\\? \\[\\]" src >"$list_file" || true
+    rg -n "use[A-Za-z0-9_]*Store\\(\\(.*\\) => .*\\?\\? \\{\\}" src >>"$list_file" || true
+
+    if [ -s "$list_file" ]; then
+        echo "Potential unstable store selector fallback detected:"
+        cat "$list_file"
+        echo "Hint: avoid '?? []' / '?? {}' directly inside store selectors; use stable constants."
+        rm -f "$list_file"
+        return 1
+    fi
+
+    rm -f "$list_file"
+    echo "Store selector stability check passed."
+    return 0
+}
+
 run_check() {
     local step="$1"
     local cmd="$2"
@@ -159,8 +179,17 @@ run_check "[3/3] Running Production Build (next build)..." \
     "Build check passed." \
     "Build check failed."
 
+echo "[4/4] Running Store Selector Stability Check..."
+if store_selector_stability_check; then
+    echo "✓ Store selector stability check passed."
+else
+    echo "✗ Store selector stability check failed."
+    FAIL_COUNT=$((FAIL_COUNT + 1))
+fi
+echo
+
 if [ "$RUN_DEV_SMOKE" -eq 1 ]; then
-    echo "[4/4] Running Dev Runtime Smoke Check..."
+    echo "[5/5] Running Dev Runtime Smoke Check..."
     if dev_smoke_check; then
         echo "✓ Dev smoke check passed."
     else

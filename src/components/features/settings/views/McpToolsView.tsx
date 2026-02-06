@@ -30,6 +30,8 @@ const SCOPE_OPTIONS: Array<{ id: ToolScope; label: string }> = [
     { id: "sql", label: "SQL Studio" },
 ];
 
+const EMPTY_TOOL_IDS: string[] = [];
+
 export function McpToolsView({ servers, onBack, onAddServer, onOpenPostgresTool, defaultScope = "chat" }: Props) {
     const [scope, setScope] = React.useState<ToolScope>(defaultScope);
 
@@ -37,7 +39,7 @@ export function McpToolsView({ servers, onBack, onAddServer, onOpenPostgresTool,
         setScope(defaultScope);
     }, [defaultScope]);
 
-    const enabledToolIds = useSettingsStore((s) => s.enabledToolIdsByScope?.[scope] ?? []);
+    const enabledToolIds = useSettingsStore((s) => s.enabledToolIdsByScope?.[scope] ?? EMPTY_TOOL_IDS);
     const setEnabledToolIdsForScope = useSettingsStore((s) => s.setEnabledToolIdsForScope);
     const toggleToolIdForScope = useSettingsStore((s) => s.toggleToolIdForScope);
 
